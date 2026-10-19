@@ -1,0 +1,33 @@
+table_name,source_file,rows_in,rows_passed,rows_quarantined,contract_columns,schema_warning
+data_contracts,data\raw\data_contracts.csv,42,42,0,0,
+data_dictionary,data\raw\data_dictionary.csv,371,371,0,0,no column dictionary; loaded and shape-checked only
+dim_account,data\raw\dim_account.csv,47,47,0,0,
+dim_client,data\raw\dim_client.csv,28,28,0,0,
+dim_date,data\raw\dim_date.csv,2557,2557,0,0,
+dim_department,data\raw\dim_department.csv,11,11,0,0,
+dim_employee,data\raw\dim_employee.csv,1606,1606,0,0,
+dim_leave_type,data\raw\dim_leave_type.csv,6,6,0,0,
+dim_location,data\raw\dim_location.csv,9,9,0,0,
+dim_role,data\raw\dim_role.csv,58,58,0,0,
+dim_sprint,data\raw\dim_sprint.csv,38,38,0,0,
+dim_team,data\raw\dim_team.csv,16,16,0,0,
+dim_vendor,data\raw\dim_vendor.csv,30,30,0,0,
+dq_checks_catalog,data\raw\dq_checks_catalog.csv,14,14,0,0,
+dq_known_issues,data\raw\dq_known_issues.csv,11,11,0,0,
+fact_anomaly,data\raw\fact_anomaly.csv,405,405,0,12,unexpected columns (warn and retain): period_key
+fact_attendance_monthly,data\raw\fact_attendance_monthly.csv,7343,7343,0,0,
+fact_attrition_risk,data\raw\fact_attrition_risk.csv,430,425,5,10,"unexpected columns (warn and retain): as_of_date_key, employee_key, model_note"
+fact_expense,data\raw\fact_expense.csv,501,501,0,0,
+fact_forecast,data\raw\fact_forecast.csv,72,72,0,9,"unexpected columns (warn and retain): forecast_month_key, model_version"
+fact_headcount_monthly,data\raw\fact_headcount_monthly.csv,891,891,0,0,
+fact_invoice,data\raw\fact_invoice.csv,743,743,0,0,
+fact_invoice_payment,data\raw\fact_invoice_payment.csv,709,709,0,0,
+fact_leave,data\raw\fact_leave.csv,3441,3441,0,0,
+fact_ledger,data\raw\fact_ledger.csv,6784,6784,0,0,
+fact_payroll,data\raw\fact_payroll.csv,7344,7344,0,0,
+fact_task,data\raw\fact_task.csv,28868,28848,20,13,"unexpected columns (warn and retain): completed_on_time, cycle_time_days, is_overdue_at_cutoff"
+metric_dictionary,data\raw\metric_dictionary.csv,28,28,0,0,
+read_me,data\raw\read_me.csv,39,39,0,0,no column dictionary; loaded and shape-checked only
+reconciliation_answer_key,data\raw\reconciliation_answer_key.csv,18,18,0,0,
+reference_summary_dept_month,data\raw\reference_summary_dept_month.csv,198,198,0,0,
+readme,readme.csv,37,37,0,0,no column dictionary; loaded and shape-checked only

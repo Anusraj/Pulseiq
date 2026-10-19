@@ -1,0 +1,39 @@
+Headline numbers,,,,
+,,,,
+Item,,Value,,
+Employees / history versions,,"745 employees, 1,606 dimension versions (SCD Type 2)",,
+Payroll fact,,"7,344 rows (7,340 clean + 4 planted bad rows), 18 months",,
+Attendance fact,,"7,343 employee-month rows",,
+Ledger fact,,"6,784 journal lines",,
+Invoices / expenses,,"743 invoices, 501 expense bills",,
+Tasks (sample board feed),,"28,868 tasks, 16 teams, 38 two-week sprints",,
+Headcount history,,81 months by department (Jan 2020 to Sep 2026),,
+Metrics defined,,28 metrics in metric_dictionary,,
+Quality checks,,14 checks in dq_checks_catalog,,
+Planted problems,,"11 (listed in dq_known_issues, to open after your own checks)",,
+,,,,
+,,,,
+How the tables join (star schema),,,,
+,,,,
+Fact,,Joins to dimension,,Keys
+fact_payroll,,"dim_employee, dim_date, dim_department, dim_role",,"employee_key (version valid at period end), date_key = month end, department_id, role_id"
+fact_attendance_monthly,,"dim_employee, dim_date, dim_department",,"employee_key, date_key = month end"
+fact_leave,,"dim_employee, dim_leave_type, dim_date",,"employee_key, leave_type_code, start_date_key / end_date_key"
+fact_headcount_monthly,,"dim_department, dim_date",,"department_id, date_key = month end"
+fact_ledger,,"dim_account, dim_department, dim_date",,"account_code, cost_center_department_id, date_key"
+fact_invoice / fact_invoice_payment,,"dim_client, dim_account, dim_date",,"client_id, service_line_account, invoice_date_key / payment_date_key"
+fact_expense,,"dim_vendor, dim_account, dim_department, dim_date",,"vendor_id, category_account, department_id, expense_date_key"
+fact_task,,"dim_team, dim_sprint, dim_employee",,"team_id, sprint_id, assignee_employee_id"
+fact_anomaly / fact_attrition_risk / fact_forecast,,"dim_employee, dim_department, dim_date",,"employee_id (employee_key for risk), department_id, date keys"
+,,,,
+,,,,
+,,,,
+Read before you start,,,,
+,,,,
+•  Use employee_key (not employee_id) to join facts to dim_employee so that history is respected: a person who moved department in June must appear in the old department before June.,,,,
+•  The sheets reconciliation_answer_key and reference_summary_dept_month contain the CORRECT monthly totals computed from clean data. Use them to test your pipeline. Your own totals from the fact sheets will differ in the months touched by planted problems until you clean them.,,,,
+"•  The sheet dq_known_issues lists every planted problem with record ids. Write your checks first (see dq_checks_catalog for ideas), then compare.",,,,
+"•  fact_task, fact_anomaly, fact_attrition_risk and fact_forecast are SAMPLE feeds that stand in for the Full Stack task board and the AI services until they are live. Their contracts are in data_contracts. In Task 19 you replace them with live APIs.",,,,
+•  Show aggregates only. The metric dictionary gives a minimum group size; hide smaller groups (a group of one reveals one person pay).,,,,
+"•  Salary data is sensitive; it appears only in fact_payroll, so you can practise column- and row-level access control.",,,,
+•  Dates: date_key is an integer YYYYMMDD. dim_date covers 2020-2026 with Indian financial year and fiscal quarter (Q1 = April to June).,,,,
