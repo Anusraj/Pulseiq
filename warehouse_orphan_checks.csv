@@ -1,0 +1,46 @@
+relationship,source_rows,checked_rows,orphan_rows,null_key_rows,status,explanation
+dim_client.primary_service_account_key,28,28,0,0,PASS,All populated keys resolve to a target row.
+dim_employee.department_key,1607,1606,0,0,PASS,All populated keys resolve to a target row.
+dim_employee.role_key,1607,1606,0,0,PASS,All populated keys resolve to a target row.
+dim_employee.location_key,1607,1606,0,0,PASS,All populated keys resolve to a target row.
+dim_role.department_key,58,58,0,0,PASS,All populated keys resolve to a target row.
+dim_team.department_key,16,16,0,0,PASS,All populated keys resolve to a target row.
+dim_team.team_lead_employee_key,16,15,0,1,PASS,Optional source key is blank; not counted as an orphan.
+dim_vendor.primary_expense_account_key,30,30,0,0,PASS,All populated keys resolve to a target row.
+fact_payroll.employee_key,7344,7344,0,0,PASS,All populated keys resolve to a target row.
+fact_payroll.date_key,7344,7344,0,0,PASS,All populated keys resolve to a target row.
+fact_payroll.department_key,7344,7344,0,0,PASS,All populated keys resolve to a target row.
+fact_payroll.role_key,7344,7344,0,0,PASS,All populated keys resolve to a target row.
+fact_attendance_monthly.employee_key,7343,7343,0,0,PASS,All populated keys resolve to a target row.
+fact_attendance_monthly.date_key,7343,7343,0,0,PASS,All populated keys resolve to a target row.
+fact_attendance_monthly.department_key,7343,7343,0,0,PASS,All populated keys resolve to a target row.
+fact_leave.employee_key,3441,3441,0,0,PASS,All populated keys resolve to a target row.
+fact_leave.leave_type_key,3441,3441,0,0,PASS,All populated keys resolve to a target row.
+fact_leave.start_date_key,3441,3441,0,0,PASS,All populated keys resolve to a target row.
+fact_leave.end_date_key,3441,3441,0,0,PASS,All populated keys resolve to a target row.
+fact_headcount_monthly.date_key,891,891,0,0,PASS,All populated keys resolve to a target row.
+fact_headcount_monthly.department_key,891,891,0,0,PASS,All populated keys resolve to a target row.
+fact_ledger.date_key,6784,6784,0,0,PASS,All populated keys resolve to a target row.
+fact_ledger.account_key,6784,6784,0,0,PASS,All populated keys resolve to a target row.
+fact_ledger.department_key,6784,1096,0,5688,PASS,Optional source key is blank; not counted as an orphan.
+fact_invoice.client_key,743,743,0,0,PASS,All populated keys resolve to a target row.
+fact_invoice.account_key,743,743,0,0,PASS,All populated keys resolve to a target row.
+fact_invoice.invoice_date_key,743,743,0,0,PASS,All populated keys resolve to a target row.
+fact_invoice_payment.payment_date_key,709,709,0,0,PASS,All populated keys resolve to a target row.
+fact_invoice_payment.invoice_id,709,709,0,0,PASS,All populated keys resolve to a target row.
+fact_invoice_payment.client_key,709,709,0,0,PASS,All populated keys resolve to a target row.
+fact_invoice_payment.account_key,709,709,0,0,PASS,All populated keys resolve to a target row.
+fact_expense.vendor_key,501,501,0,0,PASS,All populated keys resolve to a target row.
+fact_expense.account_key,501,501,0,0,PASS,All populated keys resolve to a target row.
+fact_expense.department_key,501,501,0,0,PASS,All populated keys resolve to a target row.
+fact_expense.expense_date_key,501,501,0,0,PASS,All populated keys resolve to a target row.
+fact_task.team_key,28848,28848,0,0,PASS,All populated keys resolve to a target row.
+fact_task.sprint_key,28848,28848,0,0,PASS,All populated keys resolve to a target row.
+fact_task.assignee_employee_key,28848,28848,0,0,PASS,All populated keys resolve to a target row.
+fact_anomaly.employee_key,405,405,0,0,PASS,All populated keys resolve to a target row.
+fact_anomaly.date_key,405,405,0,0,PASS,All populated keys resolve to a target row.
+fact_attrition_risk.employee_key,425,425,0,0,PASS,All populated keys resolve to a target row.
+fact_attrition_risk.department_id,425,425,0,0,PASS,All populated keys resolve to a target row.
+fact_attrition_risk.date_key,425,425,0,0,PASS,All populated keys resolve to a target row.
+fact_forecast.department_id,72,72,0,0,PASS,All populated keys resolve to a target row.
+fact_forecast.forecast_date_key,72,72,0,0,PASS,All populated keys resolve to a target row.

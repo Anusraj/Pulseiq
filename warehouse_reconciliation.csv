@@ -1,0 +1,13 @@
+fact_table,task1_rows_passed,warehouse_rows,difference,status
+fact_payroll,7344,7344,0,PASS
+fact_attendance_monthly,7343,7343,0,PASS
+fact_leave,3441,3441,0,PASS
+fact_headcount_monthly,891,891,0,PASS
+fact_ledger,6784,6784,0,PASS
+fact_invoice,743,743,0,PASS
+fact_invoice_payment,709,709,0,PASS
+fact_expense,501,501,0,PASS
+fact_task,28848,28848,0,PASS
+fact_anomaly,405,405,0,PASS
+fact_attrition_risk,425,425,0,PASS
+fact_forecast,72,72,0,PASS

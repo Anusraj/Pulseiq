@@ -50,3 +50,17 @@ SELECT source_row_number, reason, row_data
 FROM quarantine.fact_task
 LIMIT 20;
 ```
+
+## Build the Task 2 warehouse
+
+After the Task 1 ETL completes, build the star-schema warehouse:
+
+```powershell
+python warehouse.py
+```
+
+The script builds the `warehouse` schema from `validated` rows and verifies
+fact reconciliation and dimensional orphans. See [the warehouse guide](docs/warehouse.md)
+and [the Mermaid ER diagram](docs/star-schema.md). The run creates
+`warehouse_reconciliation.csv` and `warehouse_orphan_checks.csv` as report
+evidence; see the [Task 2 evidence summary](docs/task2-evidence.md).

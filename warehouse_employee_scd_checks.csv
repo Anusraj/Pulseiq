@@ -1,0 +1,7 @@
+check_name,rows_checked,mismatch_rows,status
+fact_payroll_employee_version,7342,0,PASS
+fact_attendance_employee_version,7343,0,PASS
+fact_leave_employee_version,3441,0,PASS
+fact_attrition_employee_version,425,0,PASS
+fact_task_current_assignee,28848,0,PASS
+fact_anomaly_employee_at_period_end,384,0,PASS
