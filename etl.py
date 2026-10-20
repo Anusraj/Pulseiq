@@ -7,8 +7,9 @@ import json
 import re
 import sys
 import tempfile
+import uuid
 from collections import Counter, defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,8 @@ except ImportError as exc:
         "DuckDB is required. Activate the project virtual environment and run "
         "`python -m pip install -r starter/requirements.txt`."
     ) from exc
+
+from dq_gate import record_load_success, run_gate
 
 
 ROOT = Path(__file__).resolve().parent
@@ -433,6 +436,8 @@ def main() -> int:
     employee_rows = loaded.get("dim_employee", ([], [], []))[1]
     print("Opening DuckDB...", flush=True)
     connection = duckdb.connect(str(DATABASE))
+    run_id = uuid.uuid4().hex
+    run_started_at = datetime.now(timezone.utc)
     try:
         for schema in ("raw", "validated", "quarantine", "etl"):
             connection.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
@@ -594,7 +599,22 @@ def main() -> int:
             for row in summary:
                 if row["rows_quarantined"]:
                     print(f"- quarantine.{row['table_name']}: {row['rows_quarantined']:,}")
-        return 0
+        record_load_success(connection, run_id, run_started_at)
+        dq_report = run_gate(connection, run_id)
+        print("\nData quality gate")
+        print(f"{'check':10} {'severity':10} {'bad rows':>9} {'status':8} check name")
+        for row in dq_report["results"]:
+            print(
+                f"{row['check_id']:10} {row['severity']:10} {row['bad_rows']:9,} "
+                f"{row['status']:8} {row['check_name']}"
+            )
+        print(
+            f"Overall DQ status: {dq_report['overall_status']} "
+            f"({dq_report['critical_failures']} critical failures, "
+            f"{dq_report['warning_failures']} warnings)"
+        )
+        print(f"DQ results: dq_results.csv; findings: dq_findings.csv")
+        return 1 if dq_report["critical_failures"] else 0
     finally:
         connection.close()
 

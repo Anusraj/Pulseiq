@@ -20,7 +20,10 @@ python starter\load_to_duckdb.py
 The pipeline reads every CSV in `data\raw` and the root `readme.csv`, and
 creates `pulseiq.duckdb`. It can be rerun safely: each run replaces the
 source, validated, quarantine, and summary tables. Run it a second time to
-confirm stable counts.
+confirm stable counts. Every successful load also runs the 14-check data
+quality gate against the untouched `raw` inputs. Critical failures are
+recorded, printed, and make the command exit nonzero so a scheduler or
+downstream step can block publication; warning checks do not block it.
 
 ## Where the data goes
 
@@ -29,12 +32,26 @@ confirm stable counts.
 - `quarantine`: rejected rows, source row number, JSON copy of the row, and
   human-readable reason.
 - `etl.summary`: per-input row counts and schema warnings.
+- `etl.run_log`, `etl.dq_runs`, `etl.dq_results`, and `etl.dq_findings`:
+  timestamped ETL and quality-gate history.
 - `etl_summary.csv`: the same summary, convenient for a report.
+- `dq_results.csv` and `dq_findings.csv`: latest run's manager summary and
+  row-level check findings.
+- `dq_self_test_results.csv`: evidence from the isolated tests described in
+  [the Task 3 guide](docs/dq-gate.md).
 
 For every input, `rows_in = rows_passed + rows_quarantined` is asserted before
 the run completes. Unexpected columns warn and are retained; missing
 contracted columns fail the run. See [CONTRACT_NOTES.md](CONTRACT_NOTES.md)
 for the notes on the anomaly, attrition-risk, forecast, and task contracts.
+
+Run the isolated test suite to prove every DQ query catches a deliberately
+bad row. It copies relevant source tables into separate in-memory databases,
+adds the test row there, and never modifies the production `raw` tables:
+
+```powershell
+python dq_gate.py --self-test
+```
 
 ## Useful DuckDB checks
 
@@ -64,3 +81,6 @@ fact reconciliation and dimensional orphans. See [the warehouse guide](docs/ware
 and [the Mermaid ER diagram](docs/star-schema.md). The run creates
 `warehouse_reconciliation.csv` and `warehouse_orphan_checks.csv` as report
 evidence; see the [Task 2 evidence summary](docs/task2-evidence.md).
+
+See the [Task 3 DQ guide](docs/dq-gate.md) for plain-language check meanings,
+stop-versus-warn decisions, the planted-issue coverage, and evidence outputs.
