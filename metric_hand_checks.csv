@@ -1,0 +1,6 @@
+metric_id,metric_name,grain,manual_inputs,numerator,denominator,hand_calculated_value,view_value,difference,denominator_comparison,status
+M04,Monthly attrition rate,2020-01-01 / D01,exits=2; start headcount=61; end headcount=60; average=60.5,2,60.5,3.31,3.31,0.00,start=3.28%; average=3.31%; end=3.33%,PASS
+M07,Gross pay,2025-04-30 / D01,sum of 145 validated gross_pay values,21189054.97,1,21189054.97,21189054.97,0.00,,PASS
+M09,Employer payroll cost,2025-04-30 / D01,sum of 145 validated employer_cost values,21428108.75,1,21428108.75,21428108.75,0.00,,PASS
+M16,Revenue,2025-04-01 / account 4001,negative of 23 ledger signed amounts,41824400.0,1,41824400.00,41824400.00,0.00,,PASS
+M22,Task completion rate,2025-04-07 / T01 / SP-01,50 done / 55 non-cancelled tasks x 100,50,55,90.91,90.91,0.00,,PASS

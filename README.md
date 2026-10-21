@@ -84,3 +84,24 @@ evidence; see the [Task 2 evidence summary](docs/task2-evidence.md).
 
 See the [Task 3 DQ guide](docs/dq-gate.md) for plain-language check meanings,
 stop-versus-warn decisions, the planted-issue coverage, and evidence outputs.
+
+## Build the Task 4 governed metric layer
+
+After rebuilding the Task 1 inputs and Task 2 warehouse, run:
+
+```powershell
+python metrics.py
+```
+
+This creates 28 reusable views in the DuckDB `metrics` schema, plus
+`metrics.metric_catalog`. Every official view uses the same aggregate output
+shape and applies its catalog minimum group size before returning rows.
+Payroll views use the validated warehouse and a helper that excludes unknown
+employee keys and collapses exact duplicate payroll records; raw and Task 1
+quarantine data remain unchanged.
+
+Generated evidence includes `metric_catalog.csv` and
+`metric_hand_checks.csv`, plus `metric_view_validation.csv` with view row counts
+and small-group audit results. See [the Task 4 metric-layer guide](docs/task4-metric-layer.md)
+for formulas, the small-group policy, hand-check arithmetic, and the
+attrition-denominator decision.
