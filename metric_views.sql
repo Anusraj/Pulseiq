@@ -414,3 +414,81 @@ SELECT forecast_month AS period_start, department_id, NULL::VARCHAR AS breakdown
        'percent'::VARCHAR AS unit,
        CASE WHEN actual IS NULL THEN 'AWAITING_ACTUAL' ELSE 'AVAILABLE' END::VARCHAR AS data_status
 FROM forecast_actuals;
+
+CREATE OR REPLACE VIEW metrics.dashboard_headcount_by_location_tier AS
+WITH snapshots AS (
+    SELECT DISTINCT period_start, department_id,
+           last_day(period_start)::DATE AS period_end
+    FROM metrics.m01_headcount
+), employee_snapshots AS (
+    SELECT s.period_start, s.department_id, e.employee_id,
+           COALESCE(l.city_tier, 'Unknown') AS breakdown_id
+    FROM snapshots s
+    JOIN warehouse.dim_employee e
+      ON e.department_id = s.department_id
+     AND e.hire_date <= s.period_end
+     AND (e.exit_date IS NULL OR e.exit_date > s.period_end)
+     AND e.valid_from <= s.period_end
+     AND COALESCE(e.valid_to, DATE '9999-12-31') >= s.period_end
+     AND e.employee_key <> 0
+    LEFT JOIN warehouse.dim_location l ON l.work_location = e.work_location
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY s.period_start, s.department_id, e.employee_id
+        ORDER BY e.valid_from DESC, e.employee_key DESC
+    ) = 1
+), grouped AS (
+    SELECT period_start, department_id, breakdown_id,
+           COUNT(DISTINCT employee_id)::BIGINT AS group_size
+    FROM employee_snapshots
+    GROUP BY 1, 2, 3
+)
+SELECT period_start, department_id, breakdown_id, group_size,
+       group_size::DOUBLE AS numerator, NULL::DOUBLE AS denominator,
+       group_size::DOUBLE AS metric_value, 'count'::VARCHAR AS unit,
+       'AVAILABLE'::VARCHAR AS data_status
+FROM grouped
+WHERE group_size >= (
+    SELECT minimum_group_size_numeric
+    FROM metrics.metric_catalog WHERE metric_id = 'M01'
+);
+
+CREATE OR REPLACE VIEW metrics.dashboard_department_lookup AS
+SELECT department_id, department_name
+FROM warehouse.dim_department
+WHERE department_id <> 'D00';
+
+CREATE OR REPLACE VIEW metrics.dashboard_headcount_by_work_mode AS
+WITH snapshots AS (
+    SELECT DISTINCT period_start, department_id,
+           last_day(period_start)::DATE AS period_end
+    FROM metrics.m01_headcount
+), employee_snapshots AS (
+    SELECT s.period_start, s.department_id, e.employee_id,
+           COALESCE(NULLIF(TRIM(e.work_mode), ''), 'Unknown') AS breakdown_id
+    FROM snapshots s
+    JOIN warehouse.dim_employee e
+      ON e.department_id = s.department_id
+     AND e.hire_date <= s.period_end
+     AND (e.exit_date IS NULL OR e.exit_date > s.period_end)
+     AND e.valid_from <= s.period_end
+     AND COALESCE(e.valid_to, DATE '9999-12-31') >= s.period_end
+     AND e.employee_key <> 0
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY s.period_start, s.department_id, e.employee_id
+        ORDER BY e.valid_from DESC, e.employee_key DESC
+    ) = 1
+), grouped AS (
+    SELECT period_start, department_id, breakdown_id,
+           COUNT(DISTINCT employee_id)::BIGINT AS group_size
+    FROM employee_snapshots
+    GROUP BY 1, 2, 3
+)
+SELECT period_start, department_id, breakdown_id, group_size,
+       group_size::DOUBLE AS numerator, NULL::DOUBLE AS denominator,
+       group_size::DOUBLE AS metric_value, 'count'::VARCHAR AS unit,
+       'AVAILABLE'::VARCHAR AS data_status
+FROM grouped
+WHERE group_size >= (
+    SELECT minimum_group_size_numeric
+    FROM metrics.metric_catalog WHERE metric_id = 'M01'
+);

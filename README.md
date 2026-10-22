@@ -105,3 +105,22 @@ Generated evidence includes `metric_catalog.csv` and
 and small-group audit results. See [the Task 4 metric-layer guide](docs/task4-metric-layer.md)
 for formulas, the small-group policy, hand-check arithmetic, and the
 attrition-denominator decision.
+
+## Build the Task 5 workforce dashboard
+
+After rebuilding the ETL, warehouse, and metric layer, start the multi-page
+Streamlit app:
+
+```powershell
+python -m pip install -r starter\requirements.txt
+python etl.py
+python warehouse.py
+python metrics.py
+streamlit run app.py
+```
+
+The dashboard reads only from views in the `metrics` schema. Its reportable
+headcount follows M01's minimum group size of five; location and work-mode
+breakdowns use effective-dated employee attributes and suppress categories
+below five. See [the Task 5 evidence](docs/task5-evidence.md) for the CEO
+questions and screenshot reference.
