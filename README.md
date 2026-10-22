@@ -1,126 +1,95 @@
-# PulseIQ analytics workspace
+# PulseIQ
 
-## Run the ETL
+PulseIQ is a workforce analytics project for **Zenith Nova Technologies, part of Aura Workforce**. It turns HR and operational CSV data into a validated DuckDB warehouse, governed workforce metrics, and an interactive headcount dashboard for leaders who need a clear view of workforce size, movement, and composition.
 
-Use Python 3.11 or newer from this folder:
+## Live demo
 
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r starter\requirements.txt
-python etl.py
+The app is not publicly deployed. Run it locally with the steps below. Dashboard evidence is available in [the summary screenshot](task5-workforce-dashboard.png) and [the department breakdown screenshot](task5-workforce-breakdowns.png).
+
+## Features
+
+- Data contracts, validation, quarantine, reconciliation, and a 14-check data-quality gate.
+- Dimensional warehouse with employee history and star-schema facts and dimensions.
+- 29 governed metric views with catalog definitions, minimum-group suppression, and hand-check evidence.
+- Streamlit workforce dashboard with department/date filters, five KPIs, headcount trend, department mix, location-tier mix, and work-mode mix.
+- M29 Net hires: hires minus exits at department/month grain, displayed for the selected dashboard period.
+- Insight-led chart headlines and compact, three-color visual semantics.
+
+## Tech stack
+
+- Python 3.11+
+- DuckDB
+- Streamlit
+- Plotly
+- pandas
+- CSV source data and SQL metric views
+
+## Run it locally
+
+1. Install Python 3.11 or newer and clone the repository:
+
+   ```powershell
+   git clone https://github.com/Anusraj/Pulseiq.git
+   cd Pulseiq
+   ```
+
+2. Create and activate a virtual environment:
+
+   ```powershell
+   py -3.11 -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   ```
+
+3. Install dependencies:
+
+   ```powershell
+   python -m pip install -r starter\requirements.txt
+   ```
+
+4. Build the raw/validated ETL outputs, warehouse, and governed metric views:
+
+   ```powershell
+   python etl.py
+   python warehouse.py
+   python metrics.py
+   ```
+
+5. Start the app and open the local URL printed by Streamlit, usually `http://localhost:8501`:
+
+   ```powershell
+   streamlit run app.py
+   ```
+
+The ETL gate exits nonzero when a critical data-quality check fails. See [the DQ guide](docs/dq-gate.md), [the warehouse guide](docs/warehouse.md), and [the metric-layer guide](docs/task4-metric-layer.md) for pipeline details.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    CSV[Source CSV files] --> ETL[Python ETL and data-quality gate]
+    ETL --> RAW[(DuckDB raw, validated, quarantine)]
+    RAW --> WH[Warehouse builder]
+    WH --> STAR[(DuckDB warehouse facts and dimensions)]
+    STAR --> METRICS[SQL metric views and catalog]
+    METRICS --> APP[Streamlit workforce dashboard]
+    APP --> PLOT[Plotly KPIs and charts]
 ```
 
-The starter-compatible entry point also works:
+The dashboard queries metric views only. M01-M03 provide headcount, hires, and exits; M29 provides net hiring; supporting metric views provide department labels and effective-dated location/work-mode breakdowns. Raw and warehouse tables are not queried by the app.
 
-```powershell
-python starter\load_to_duckdb.py
-```
+## How I verified it works
 
-The pipeline reads every CSV in `data\raw` and the root `readme.csv`, and
-creates `pulseiq.duckdb`. It can be rerun safely: each run replaces the
-source, validated, quarantine, and summary tables. Run it a second time to
-confirm stable counts. Every successful load also runs the 14-check data
-quality gate against the untouched `raw` inputs. Critical failures are
-recorded, printed, and make the command exit nonzero so a scheduler or
-downstream step can block publication; warning checks do not block it.
+- `python metrics.py` builds and validates all 29 official views; the latest run passed the view and small-group checks.
+- Six independently calculated examples pass in `metric_hand_checks.csv`, including M29: D01 / January 2020 has 1 hire and 2 exits, so net hires is `-1`.
+- `metric_view_validation.csv` records 0 below-threshold groups for every official view, including M29.
+- The dashboard data loader and Python compilation were checked; the live page rendered all five KPIs and four charts.
+- The DQ gate's isolated tests can be run with `python dq_gate.py --self-test`; see `dq_self_test_results.csv` for existing evidence.
 
-## Where the data goes
+## Limitations and what I would do next
 
-- `raw`: every input CSV loaded as text, preserving original field values.
-- `validated`: rows that pass the available contracts and data dictionary.
-- `quarantine`: rejected rows, source row number, JSON copy of the row, and
-  human-readable reason.
-- `etl.summary`: per-input row counts and schema warnings.
-- `etl.run_log`, `etl.dq_runs`, `etl.dq_results`, and `etl.dq_findings`:
-  timestamped ETL and quality-gate history.
-- `etl_summary.csv`: the same summary, convenient for a report.
-- `dq_results.csv` and `dq_findings.csv`: latest run's manager summary and
-  row-level check findings.
-- `dq_self_test_results.csv`: evidence from the isolated tests described in
-  [the Task 3 guide](docs/dq-gate.md).
+- The app uses the supplied CSV dataset and local DuckDB file; it is not deployed with authentication, role-based access, or scheduled refresh.
+- Groups below five are suppressed. Totals from category breakdowns may be lower than department-level headcount because suppression is applied at each view's grain.
+- M29 excludes transfers and sums reportable department/month values, so suppressed groups are not represented in its dashboard total.
+- Next: connect a scheduled refresh, add deployment and access controls, and automate browser-level tests across desktop and mobile layouts.
 
-For every input, `rows_in = rows_passed + rows_quarantined` is asserted before
-the run completes. Unexpected columns warn and are retained; missing
-contracted columns fail the run. See [CONTRACT_NOTES.md](CONTRACT_NOTES.md)
-for the notes on the anomaly, attrition-risk, forecast, and task contracts.
-
-Run the isolated test suite to prove every DQ query catches a deliberately
-bad row. It copies relevant source tables into separate in-memory databases,
-adds the test row there, and never modifies the production `raw` tables:
-
-```powershell
-python dq_gate.py --self-test
-```
-
-## Useful DuckDB checks
-
-```sql
-SELECT * FROM etl.summary ORDER BY table_name;
-
-SELECT table_name, rows_in, rows_passed, rows_quarantined,
-       rows_in = rows_passed + rows_quarantined AS reconciles
-FROM etl.summary
-ORDER BY table_name;
-
-SELECT source_row_number, reason, row_data
-FROM quarantine.fact_task
-LIMIT 20;
-```
-
-## Build the Task 2 warehouse
-
-After the Task 1 ETL completes, build the star-schema warehouse:
-
-```powershell
-python warehouse.py
-```
-
-The script builds the `warehouse` schema from `validated` rows and verifies
-fact reconciliation and dimensional orphans. See [the warehouse guide](docs/warehouse.md)
-and [the Mermaid ER diagram](docs/star-schema.md). The run creates
-`warehouse_reconciliation.csv` and `warehouse_orphan_checks.csv` as report
-evidence; see the [Task 2 evidence summary](docs/task2-evidence.md).
-
-See the [Task 3 DQ guide](docs/dq-gate.md) for plain-language check meanings,
-stop-versus-warn decisions, the planted-issue coverage, and evidence outputs.
-
-## Build the Task 4 governed metric layer
-
-After rebuilding the Task 1 inputs and Task 2 warehouse, run:
-
-```powershell
-python metrics.py
-```
-
-This creates 29 official metric views in the DuckDB `metrics` schema, plus
-supporting views and `metrics.metric_catalog`. Every official view uses the same aggregate output
-shape and applies its catalog minimum group size before returning rows.
-Payroll views use the validated warehouse and a helper that excludes unknown
-employee keys and collapses exact duplicate payroll records; raw and Task 1
-quarantine data remain unchanged.
-
-Generated evidence includes `metric_catalog.csv` and
-`metric_hand_checks.csv`, plus `metric_view_validation.csv` with view row counts
-and small-group audit results. See [the Task 4 metric-layer guide](docs/task4-metric-layer.md)
-for formulas, the small-group policy, hand-check arithmetic, and the
-attrition-denominator decision.
-
-## Build the Task 5 workforce dashboard
-
-After rebuilding the ETL, warehouse, and metric layer, start the multi-page
-Streamlit app:
-
-```powershell
-python -m pip install -r starter\requirements.txt
-python etl.py
-python warehouse.py
-python metrics.py
-streamlit run app.py
-```
-
-The dashboard reads only from views in the `metrics` schema. Its reportable
-headcount follows M01's minimum group size of five; location and work-mode
-breakdowns use effective-dated employee attributes and suppress categories
-below five. See [the Task 5 evidence](docs/task5-evidence.md) for the CEO
-questions and screenshot reference.
+Further evidence and definitions: [Task 2 warehouse](docs/task2-evidence.md), [Task 4 metric layer](docs/task4-metric-layer.md), and [Task 5 dashboard](docs/task5-evidence.md).
