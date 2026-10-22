@@ -27,3 +27,4 @@ M25,metrics.m25_average_cycle_time,608,0,PASS
 M26,metrics.m26_anomaly_flag_rate,36,0,PASS
 M27,metrics.m27_high_risk_share,10,0,PASS
 M28,metrics.m28_forecast_error_mape,66,0,PASS
+M29,metrics.m29_net_hiring,810,0,PASS

@@ -53,6 +53,7 @@ METRIC_VIEWS = {
     "M26": "m26_anomaly_flag_rate",
     "M27": "m27_high_risk_share",
     "M28": "m28_forecast_error_mape",
+    "M29": "m29_net_hiring",
 }
 
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -111,9 +112,9 @@ def check_metrics(connection: Any) -> tuple[list[dict[str, Any]], list[dict[str,
         "SELECT * FROM metrics.metric_catalog ORDER BY metric_id"
     ).fetchdf()
     catalog_rows = catalog.to_dict(orient="records")
-    if len(catalog_rows) != 28 or {row["metric_id"] for row in catalog_rows} != set(METRIC_VIEWS):
+    if len(catalog_rows) != len(METRIC_VIEWS) or {row["metric_id"] for row in catalog_rows} != set(METRIC_VIEWS):
         raise AssertionError(
-            f"Expected exactly 28 catalog entries; found {len(catalog_rows)}"
+            f"Expected exactly {len(METRIC_VIEWS)} catalog entries; found {len(catalog_rows)}"
         )
     write_csv(CATALOG_FILE, catalog_rows)
 
@@ -297,6 +298,29 @@ def hand_check_rows(connection: Any) -> list[dict[str, Any]]:
             "M22", "Task completion rate", f"{period} / {team_id} / {sprint_id}",
             f"{int(done)} done / {int(planned)} non-cancelled tasks x 100",
             done, planned, Decimal(view_value), 2, calculated_override=completion,
+        )
+    )
+
+    net_hiring_row = connection.execute("""
+        SELECT period_start, department_id, metric_value
+        FROM metrics.m29_net_hiring
+        ORDER BY period_start, department_id
+        LIMIT 1
+    """).fetchone()
+    period, department, view_value = net_hiring_row
+    hires, exits = connection.execute(
+        """
+        SELECT hires, exits FROM warehouse.fact_headcount_monthly
+        WHERE month_start_date = ? AND department_id = ?
+        """,
+        [period, department],
+    ).fetchone()
+    net_hires = decimal_value(hires) - decimal_value(exits)
+    checks.append(
+        hand_check(
+            "M29", "Net hires", f"{period} / {department}",
+            f"fact_headcount_monthly source row: hires={hires} - exits={exits}",
+            net_hires, Decimal(1), Decimal(view_value), 0,
         )
     )
     return checks

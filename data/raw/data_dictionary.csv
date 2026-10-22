@@ -1,15 +1,15 @@
 sheet,column,data_type,description,null_count,null_percent,distinct_values,example
-metric_dictionary,metric_id,text,Metric code (M01 ...).,0,0,28,M01
-metric_dictionary,metric_name,text,Metric name.,0,0,28,Headcount
-metric_dictionary,business_definition,text,Plain-language meaning.,0,0,28,Active employees on the last day of the month (permanent and
-metric_dictionary,formula,text,How it is calculated.,0,0,28,COUNT(DISTINCT employee_id) with hire_date <= month_end AND 
+metric_dictionary,metric_id,text,Metric code (M01 ...).,0,0,29,M01
+metric_dictionary,metric_name,text,Metric name.,0,0,29,Headcount
+metric_dictionary,business_definition,text,Plain-language meaning.,0,0,29,Active employees on the last day of the month (permanent and
+metric_dictionary,formula,text,How it is calculated.,0,0,29,COUNT(DISTINCT employee_id) with hire_date <= month_end AND
 metric_dictionary,source_table,text,Table(s) the metric comes from.,0,0,12,fact_headcount_monthly / dim_employee
 metric_dictionary,grain,text,Level of detail.,0,0,8,Department x month
 metric_dictionary,time_period,text,Period the metric covers.,0,0,7,Month end
 metric_dictionary,owner_team,text,Team that owns the definition.,0,0,5,HR Analytics
 metric_dictionary,unit,text,Unit of measure.,0,0,6,count
 metric_dictionary,good_direction,text,Whether higher or lower is better.,0,0,4,Context dependent
-metric_dictionary,caveat,text,Known limitation.,0,0,23,Excludes CEO if you compare departments only
+metric_dictionary,caveat,text,Known limitation.,0,0,24,Excludes CEO if you compare departments only
 metric_dictionary,minimum_group_size,text,Smallest group that may be shown.,0,0,4,5
 data_contracts,feed,text,Data feed the contract belongs to.,0,0,4,AI anomaly results (fact_anomaly)
 data_contracts,column_name,text,Column covered by the contract.,0,0,39,result_id

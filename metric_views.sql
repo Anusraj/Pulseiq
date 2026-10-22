@@ -492,3 +492,18 @@ WHERE group_size >= (
     SELECT minimum_group_size_numeric
     FROM metrics.metric_catalog WHERE metric_id = 'M01'
 );
+
+CREATE OR REPLACE VIEW metrics.m29_net_hiring AS
+SELECT h.period_start, h.department_id, NULL::VARCHAR AS breakdown_id,
+       LEAST(h.group_size, e.group_size)::BIGINT AS group_size,
+       h.metric_value - e.metric_value AS numerator,
+       NULL::DOUBLE AS denominator,
+       h.metric_value - e.metric_value AS metric_value,
+       'count'::VARCHAR AS unit,
+       'AVAILABLE'::VARCHAR AS data_status
+FROM metrics.m02_hires h
+JOIN metrics.m03_exits e USING (period_start, department_id)
+WHERE LEAST(h.group_size, e.group_size) >= (
+    SELECT minimum_group_size_numeric
+    FROM metrics.metric_catalog WHERE metric_id = 'M29'
+);

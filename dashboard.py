@@ -37,6 +37,11 @@ def load_dashboard_data(database_path: str) -> tuple[pd.DataFrame, ...]:
             FROM metrics.m03_exits
             WHERE data_status = 'AVAILABLE'
         """).fetchdf()
+        net_hiring = connection.execute("""
+            SELECT period_start, department_id, metric_value AS net_hires
+            FROM metrics.m29_net_hiring
+            WHERE data_status = 'AVAILABLE'
+        """).fetchdf()
         locations = connection.execute("""
             SELECT period_start, department_id, breakdown_id, metric_value AS headcount
             FROM metrics.dashboard_headcount_by_location_tier
@@ -54,9 +59,9 @@ def load_dashboard_data(database_path: str) -> tuple[pd.DataFrame, ...]:
     finally:
         connection.close()
 
-    for frame in (headcount, hires, exits, locations, work_modes):
+    for frame in (headcount, hires, exits, net_hiring, locations, work_modes):
         frame["period_start"] = pd.to_datetime(frame["period_start"])
-    return headcount, hires, exits, locations, work_modes, departments
+    return headcount, hires, exits, net_hiring, locations, work_modes, departments
 
 
 def _finding_title(frame: pd.DataFrame, label: str) -> tuple[str, str]:
@@ -89,8 +94,8 @@ def render_dashboard() -> None:
         .eyebrow { color: var(--teal); font: 700 12px 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: 0 !important; }
         .hero-title { font: 700 34px 'Libre Baskerville', Georgia, serif; color: var(--ink); margin: 4px 0 6px; }
         .hero-copy { color: #53665F; font-size: 15px; margin-bottom: 24px; }
-        [data-testid="stMetric"] { background: #FFFFFF; border: 1px solid #DCE5DF; border-top: 3px solid var(--teal); padding: 15px 17px; border-radius: 4px; min-height: 118px; }
-        [data-testid="stMetricLabel"] { color: #53665F; font-size: 13px; }
+        [data-testid="stMetric"] { background: #FFFFFF; border: 1px solid #DCE5DF; border-top: 3px solid var(--teal); padding: 12px 10px; border-radius: 4px; min-height: 118px; }
+        [data-testid="stMetricLabel"] { color: #53665F; font-size: 11px; }
         [data-testid="stMetricValue"] { color: var(--ink); font-size: 27px; }
         [data-testid="stMetricDelta"] svg { display: none; }
         .finding { border-left: 3px solid var(--amber); padding: 9px 12px; margin: 2px 0 23px; color: #394C45; background: rgba(255,255,255,.66); font-size: 13px; }
@@ -101,7 +106,7 @@ def render_dashboard() -> None:
     """, unsafe_allow_html=True)
 
     try:
-        headcount, hires, exits, locations, work_modes, departments = load_dashboard_data(str(DATABASE))
+        headcount, hires, exits, net_hiring, locations, work_modes, departments = load_dashboard_data(str(DATABASE))
     except Exception as exc:
         st.error("The governed workforce views are not ready. Run `python metrics.py` after the ETL and warehouse builds.")
         st.exception(exc)
@@ -141,6 +146,7 @@ def render_dashboard() -> None:
     trend = scope(headcount)
     hires_period = scope(hires)
     exits_period = scope(exits)
+    net_hiring_period = scope(net_hiring)
     if trend.empty:
         st.warning("No reportable rows match these filters.")
         return
@@ -151,14 +157,16 @@ def render_dashboard() -> None:
     change_pct = (100 * change / first_value) if first_value else 0
     total_hires = float(hires_period["hires"].sum())
     total_exits = float(exits_period["exits"].sum())
+    total_net_hires = float(net_hiring_period["net_hires"].sum())
 
     st.markdown('<div class="section-label">Current position and movement</div>', unsafe_allow_html=True)
-    metric_columns = st.columns(4)
-    metric_columns[0].metric("Headcount", f"{int(latest_value):,}", help="Sum of departments that meet the official M01 minimum group size of five.")
+    metric_columns = st.columns(5)
+    metric_columns[0].metric("Headcount", f"{int(latest_value):,}")
     metric_columns[1].metric("Net change", f"{change:+,.0f}", f"{change_pct:+.1f}%")
     metric_columns[2].metric("Hires", f"{int(total_hires):,}")
     metric_columns[3].metric("Exits", f"{int(total_exits):,}")
-    st.caption("Reportable department-level M01 headcount; hires and exits cover the selected range. Small groups are suppressed, so totals may exclude groups below five.")
+    metric_columns[4].metric("Net hires", f"{int(total_net_hires):+,}")
+    st.caption("Reportable department-level M01 headcount; movement metrics cover the selected range. Small groups are suppressed, so totals may exclude groups below five.")
 
     direction = "grew" if change > 0 else "declined" if change < 0 else "was unchanged"
     direction_text = f"{abs(change_pct):.1f}%" if change else "0%"

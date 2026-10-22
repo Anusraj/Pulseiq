@@ -11,7 +11,8 @@
 ## Evidence
 
 Run the app with `streamlit run app.py`. The dashboard reads only the official
-`metrics.m01_headcount`, `metrics.m02_hires`, and `metrics.m03_exits` views,
+`metrics.m01_headcount`, `metrics.m02_hires`, `metrics.m03_exits`, and
+`metrics.m29_net_hiring` views,
 plus metric-layer views for the department labels and suppressed workforce
 breakdowns. No raw or warehouse table is queried by the app.
 
@@ -22,3 +23,20 @@ be lower than reportable department headcount.
 
 Screenshots: `task5-workforce-dashboard.png` (summary and trend) and
 `task5-workforce-breakdowns.png` (department mix).
+
+## Mini challenge: M29 net hires
+
+Definition: department-month hires minus exits. Positive values indicate net
+hiring. It excludes transfers and inherits the M02/M03 five-person minimum.
+The metric view combines `metrics.m02_hires` and `metrics.m03_exits`; the app
+sums its reportable values over the selected department and date range.
+
+Hand check: the raw `fact_headcount_monthly.csv` row for D01 / 2020-01 has
+1 hire and 2 exits. Therefore M29 is $1 - 2 = -1$, matching
+`metrics.m29_net_hiring` for that department-month. The automated comparison is
+recorded in `metric_hand_checks.csv`.
+
+Trace the number from dashboard KPI to M29, then to M02 hires and M03 exits,
+and finally to the department-month row in the raw headcount file. In a star
+schema, fact tables store measurements at a defined grain and dimension tables
+provide descriptive context such as department, employee, location, or date.

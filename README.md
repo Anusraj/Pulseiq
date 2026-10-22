@@ -93,8 +93,8 @@ After rebuilding the Task 1 inputs and Task 2 warehouse, run:
 python metrics.py
 ```
 
-This creates 28 reusable views in the DuckDB `metrics` schema, plus
-`metrics.metric_catalog`. Every official view uses the same aggregate output
+This creates 29 official metric views in the DuckDB `metrics` schema, plus
+supporting views and `metrics.metric_catalog`. Every official view uses the same aggregate output
 shape and applies its catalog minimum group size before returning rows.
 Payroll views use the validated warehouse and a helper that excludes unknown
 employee keys and collapses exact duplicate payroll records; raw and Task 1

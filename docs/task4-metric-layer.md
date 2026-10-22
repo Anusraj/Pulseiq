@@ -10,8 +10,8 @@ python warehouse.py
 python metrics.py
 ```
 
-The SQL source is `metric_views.sql`; the builder registers the 28 official
-views and `metrics.metric_catalog` in `pulseiq.duckdb`. Each official view has
+The SQL source is `metric_views.sql`; the builder registers the 29 official
+views, supporting views, and `metrics.metric_catalog` in `pulseiq.duckdb`. Each official view has
 the columns `period_start`, `department_id`, `breakdown_id`, `group_size`,
 `numerator`, `denominator`, `metric_value`, `unit`, and `data_status`.
 Consumers should use `metric_value` and preserve the view's grain and output
@@ -61,6 +61,7 @@ direction, caveat, and privacy rule.
 | M26 | `metrics.m26_anomaly_flag_rate` | Anomaly source/month |
 | M27 | `metrics.m27_high_risk_share` | Department/latest scoring date |
 | M28 | `metrics.m28_forecast_error_mape` | Forecast department/month |
+| M29 | `metrics.m29_net_hiring` | Department/month |
 
 ## Governed input and privacy rules
 
@@ -92,10 +93,10 @@ Those rows are labelled `AWAITING_ACTUAL` and have a null `metric_value`;
 they are not presented as a zero forecast error. This supplied dataset's 66
 forecast rows are all awaiting actuals, consistent with the catalog caveat.
 
-## Five hand checks
+## Six hand checks
 
 `metric_hand_checks.csv` records the inputs, hand calculation, view output,
-difference, and pass status. The five independently checked values are:
+difference, and pass status. The six independently checked values are:
 
 | Metric | Grain | Hand-calculated value | View value |
 |---|---|---:|---:|
@@ -104,6 +105,7 @@ difference, and pass status. The five independently checked values are:
 | M09 employer payroll cost | 2025-04-30 / D01 | ₹21,428,108.75 | ₹21,428,108.75 |
 | M16 revenue | 2025-04 / account 4001 | ₹41,824,400.00 | ₹41,824,400.00 |
 | M22 task completion | 2025-04-07 / T01 / SP-01 | 50 / 55 × 100 = 90.91% | 90.91% |
+| M29 net hires | 2020-01 / D01 | 1 hire - 2 exits = -1 | -1 |
 
 ### Attrition denominator decision
 
@@ -126,9 +128,9 @@ headcount was 61, and ending headcount was 60:
 
 ## Evidence and verification
 
-- `metric_catalog.csv`: all 28 metric definitions and view mappings.
-- `metric_hand_checks.csv`: five hand calculations matching the views.
-- `metric_view_validation.csv`: the 28 view names, row counts, status, and
+- `metric_catalog.csv`: all 29 metric definitions and view mappings.
+- `metric_hand_checks.csv`: six hand calculations matching the views.
+- `metric_view_validation.csv`: the 29 view names, row counts, status, and
   below-minimum group audit.
 - Running `python metrics.py` reports the row count of each view and fails if a
   view is missing, returns no rows, omits a catalog entry, or leaks a group
