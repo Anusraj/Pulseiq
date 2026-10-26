@@ -493,6 +493,62 @@ WHERE group_size >= (
     FROM metrics.metric_catalog WHERE metric_id = 'M01'
 );
 
+CREATE OR REPLACE VIEW metrics.dashboard_attendance_overtime AS
+WITH grouped AS (
+    SELECT period_end_date AS period_start, department_id,
+           COUNT(DISTINCT employee_id)::BIGINT AS group_size,
+           SUM(overtime_hours)::DOUBLE AS overtime_hours
+    FROM warehouse.fact_attendance_monthly
+    GROUP BY 1, 2
+)
+SELECT period_start, department_id, NULL::VARCHAR AS breakdown_id, group_size,
+       overtime_hours AS numerator, NULL::DOUBLE AS denominator,
+       ROUND(overtime_hours, 2) AS metric_value,
+       'hours'::VARCHAR AS unit, 'AVAILABLE'::VARCHAR AS data_status
+FROM grouped
+WHERE group_size >= (
+    SELECT minimum_group_size_numeric
+    FROM metrics.metric_catalog WHERE metric_id = 'M13'
+);
+
+CREATE OR REPLACE VIEW metrics.dashboard_leave_days_by_type AS
+WITH grouped AS (
+    SELECT LAST_DAY(DATE_TRUNC('month', l.start_date))::DATE AS period_start,
+           e.department_id, t.leave_type_code AS breakdown_id,
+           t.leave_type_name, COUNT(DISTINCT l.employee_id)::BIGINT AS group_size,
+           SUM(l.days)::DOUBLE AS leave_days
+    FROM warehouse.fact_leave l
+    JOIN warehouse.dim_employee e
+      ON e.employee_key = l.employee_key
+     AND e.employee_key <> 0
+    JOIN warehouse.dim_leave_type t ON t.leave_type_key = l.leave_type_key
+    WHERE LOWER(TRIM(l.status)) = 'approved'
+    GROUP BY 1, 2, 3, 4
+)
+SELECT period_start, department_id, breakdown_id, group_size,
+       leave_days AS numerator, NULL::DOUBLE AS denominator,
+       ROUND(leave_days, 2) AS metric_value, 'days'::VARCHAR AS unit,
+       'AVAILABLE'::VARCHAR AS data_status, leave_type_name
+FROM grouped
+WHERE group_size >= (
+    SELECT minimum_group_size_numeric
+    FROM metrics.metric_catalog WHERE metric_id = 'M13'
+);
+
+CREATE OR REPLACE VIEW metrics.dashboard_attendance_calendar AS
+SELECT LAST_DAY(date)::DATE AS period_start,
+       COUNT(*) FILTER (WHERE UPPER(is_holiday) = 'Y')::BIGINT AS holiday_count,
+       STRING_AGG(CAST(date AS VARCHAR), ', ' ORDER BY date)
+           FILTER (WHERE UPPER(is_holiday) = 'Y') AS holiday_dates,
+       COUNT(*) FILTER (
+           WHERE UPPER(is_holiday) = 'Y' AND DAYOFWEEK(date) IN (1, 5)
+       )::BIGINT AS long_weekend_holiday_count,
+       STRING_AGG(CAST(date AS VARCHAR), ', ' ORDER BY date)
+           FILTER (WHERE UPPER(is_holiday) = 'Y' AND DAYOFWEEK(date) IN (1, 5))
+           AS long_weekend_holiday_dates
+FROM warehouse.dim_date
+GROUP BY 1;
+
 CREATE OR REPLACE VIEW metrics.m29_net_hiring AS
 SELECT h.period_start, h.department_id, NULL::VARCHAR AS breakdown_id,
        LEAST(h.group_size, e.group_size)::BIGINT AS group_size,
