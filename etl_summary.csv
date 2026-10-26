@@ -26,7 +26,7 @@ fact_leave,data\raw\fact_leave.csv,3441,3441,0,0,
 fact_ledger,data\raw\fact_ledger.csv,6784,6784,0,0,
 fact_payroll,data\raw\fact_payroll.csv,7344,7344,0,0,
 fact_task,data\raw\fact_task.csv,28868,28848,20,13,"unexpected columns (warn and retain): completed_on_time, cycle_time_days, is_overdue_at_cutoff"
-metric_dictionary,data\raw\metric_dictionary.csv,28,28,0,0,
+metric_dictionary,data\raw\metric_dictionary.csv,29,29,0,0,
 read_me,data\raw\read_me.csv,39,39,0,0,no column dictionary; loaded and shape-checked only
 reconciliation_answer_key,data\raw\reconciliation_answer_key.csv,18,18,0,0,
 reference_summary_dept_month,data\raw\reference_summary_dept_month.csv,198,198,0,0,

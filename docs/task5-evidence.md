@@ -21,6 +21,11 @@ work-mode breakdowns apply the same threshold at their own category grain, so
 small groups are intentionally omitted. Their category totals may therefore
 be lower than reportable department headcount.
 
+The dashboard uses a refreshed, responsive layout while retaining its five
+workforce KPIs and charts. Paired "From" and "Through" month selectors allow
+selection across every available M01 month, default to the latest 12 available
+months, and show the full available date range in the sidebar.
+
 Screenshots: `task5-workforce-dashboard.png` (summary and trend) and
 `task5-workforce-breakdowns.png` (department mix).
 

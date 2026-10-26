@@ -93,3 +93,65 @@ The dashboard queries metric views only. M01-M03 provide headcount, hires, and e
 - Next: connect a scheduled refresh, add deployment and access controls, and automate browser-level tests across desktop and mobile layouts.
 
 Further evidence and definitions: [Task 2 warehouse](docs/task2-evidence.md), [Task 4 metric layer](docs/task4-metric-layer.md), and [Task 5 dashboard](docs/task5-evidence.md).
+
+## What I learned and problems solved (Tasks 1–5)
+
+### Task 1: ETL and data validation
+
+**What I learned**
+
+- Keeping the original source values makes it possible to audit what arrived, even when a value cannot be loaded as valid data.
+- Data contracts and the data dictionary make validation explicit instead of relying on assumptions about each CSV.
+- Separating validated rows from quarantined rows helps downstream steps use trusted data without losing evidence of rejected input.
+
+**Problems I hit and how I solved them**
+
+Source rows can have invalid values or widths, and feeds can include extra columns. I routed invalid rows to quarantine with a reason, accepted formatted numeric text such as values with thousands separators, and retained unexpected columns with a warning. Missing contracted columns remain a visible ETL error rather than being silently ignored.
+
+### Task 2: dimensional warehouse
+
+**What I learned**
+
+- Fact tables need a clear grain, while dimensions provide the descriptive context for interpreting their measurements.
+- Employee history requires a different surrogate key for each effective-dated version; historical facts must join to the version valid at the time.
+- Reconciliation and relationship checks help prove that warehouse modeling has not silently lost or misattributed source rows.
+
+**Problems I hit and how I solved them**
+
+Some passed rows had employee IDs that could not resolve to an effective employee version, while some other relationships were intentionally optional. I retained those fact rows, mapped unresolved employees to an explicit unknown member, and kept optional null keys distinct from actual orphan keys. Row-count, orphan, and SCD identity checks provide evidence for those decisions.
+
+### Task 3: data-quality gatekeeper
+
+**What I learned**
+
+- Schema and type validation alone cannot catch business problems such as unbalanced ledger entries or payroll duplicates.
+- Severity matters: critical findings should stop publication, while warnings should remain visible for an owner to investigate.
+- A check is more trustworthy when its detection logic is tested against deliberately injected bad data.
+
+**Problems I hit and how I solved them**
+
+The supplied feeds contain planted issues across payroll, accounting, dates, and employee history. I added 14 checks against the raw feeds, recorded findings without rewriting source rows, and verified the known seeded issues were detected. Isolated self-tests exercise the same SQL checks without changing the live tables.
+
+### Task 4: governed metric layer
+
+**What I learned**
+
+- A metric needs a documented formula, grain, period, unit, owner, caveat, and privacy rule—not just a SQL expression.
+- Consistent views give dashboard consumers a stable interface and reduce the chance that each consumer calculates a metric differently.
+- Hand calculations and minimum-group checks help verify both metric correctness and privacy behavior.
+
+**Problems I hit and how I solved them**
+
+The dictionary and worked example specified different M04 attrition denominators, so I used the average of starting and ending headcount and retained the original dictionary formula for traceability. Duplicate payroll rows and unknown employee keys could inflate cost metrics, so the payroll eligibility helper excludes unknown-key rows and collapses exact duplicate employee/run records without modifying source facts.
+
+### Task 5: workforce dashboard
+
+**What I learned**
+
+- A dashboard is easier to trust when it queries governed metric views instead of rebuilding business logic from raw or warehouse tables.
+- Filters, KPI cards, and charts need to use the same selected period and department context to tell a consistent story.
+- Privacy suppression at different breakdown grains can make category totals lower than department-level headcount.
+
+**Problems I hit and how I solved them**
+
+The department, location-tier, and work-mode breakdowns can omit groups below the reporting threshold, so their totals do not always equal the headline headcount; the dashboard evidence explains that behavior. Net hires also needed an explicit definition, so I exposed M29 as hires minus exits at department/month grain and checked the displayed result against a hand calculation.

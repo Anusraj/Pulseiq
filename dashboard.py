@@ -85,23 +85,33 @@ def render_dashboard() -> None:
     )
     st.markdown("""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:wght@700&display=swap');
-        :root { --ink: #173D38; --teal: #2E8173; --amber: #C4813C; --paper: #F4F7F4; }
-        .stApp { background-color: var(--paper); background-image: repeating-linear-gradient(135deg, rgba(23,61,56,.018) 0 1px, transparent 1px 8px); }
-        [data-testid="stSidebar"] { background: #E8EFEB; border-right: 1px solid #D4DFD9; }
-        h1, h2, h3 { color: var(--ink); font-family: 'Libre Baskerville', Georgia, serif !important; letter-spacing: 0 !important; }
-        html, body, [class*="st-"], p, label { font-family: 'DM Sans', 'Segoe UI', sans-serif; letter-spacing: 0 !important; }
-        .eyebrow { color: var(--teal); font: 700 12px 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: 0 !important; }
-        .hero-title { font: 700 34px 'Libre Baskerville', Georgia, serif; color: var(--ink); margin: 4px 0 6px; }
-        .hero-copy { color: #53665F; font-size: 15px; margin-bottom: 24px; }
-        [data-testid="stMetric"] { background: #FFFFFF; border: 1px solid #DCE5DF; border-top: 3px solid var(--teal); padding: 12px 10px; border-radius: 4px; min-height: 118px; }
-        [data-testid="stMetricLabel"] { color: #53665F; font-size: 11px; }
-        [data-testid="stMetricValue"] { color: var(--ink); font-size: 27px; }
+        :root { --ink: #172B4D; --muted: #667085; --teal: #087E8B; --amber: #D98E32; --paper: #F4F7FB; --line: #E4EAF1; }
+        .stApp { background: var(--paper); color: var(--ink); }
+        [data-testid="stHeader"] { background: rgba(244,247,251,.88); }
+        [data-testid="stSidebar"] { background: #FFFFFF; border-right: 1px solid var(--line); }
+        [data-testid="stSidebar"] > div { padding-top: 1.5rem; }
+        .block-container { max-width: 1500px; padding: 2rem 2.4rem 3rem; }
+        h1, h2, h3 { color: var(--ink); font-family: Inter, 'Segoe UI', sans-serif !important; letter-spacing: -0.025em !important; }
+        h2 { font-size: 1.35rem !important; font-weight: 650 !important; }
+        html, body, [class*="st-"], p, label { font-family: Inter, 'Segoe UI', sans-serif; letter-spacing: 0 !important; }
+        .eyebrow { color: var(--teal); font: 700 11px Inter, 'Segoe UI', sans-serif; text-transform: uppercase; letter-spacing: .12em !important; }
+        .hero-title { font: 750 36px Inter, 'Segoe UI', sans-serif; letter-spacing: -0.04em; color: var(--ink); margin: 8px 0 5px; }
+        .hero-copy { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
+        [data-testid="stMetric"] { background: #FFFFFF; border: 1px solid var(--line); border-top: 3px solid var(--teal); padding: 16px 15px; border-radius: 12px; min-height: 122px; box-shadow: 0 3px 12px rgba(23,43,77,.04); }
+        [data-testid="stMetricLabel"] { color: var(--muted); font-size: 12px; font-weight: 600; }
+        [data-testid="stMetricValue"] { color: var(--ink); font-size: 28px; font-weight: 700; }
         [data-testid="stMetricDelta"] svg { display: none; }
-        .finding { border-left: 3px solid var(--amber); padding: 9px 12px; margin: 2px 0 23px; color: #394C45; background: rgba(255,255,255,.66); font-size: 13px; }
-        .section-label { color: #73827C; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-        [data-testid="stPlotlyChart"] { background: rgba(255,255,255,.85); border: 1px solid #E0E7E2; border-radius: 4px; padding: 8px; }
-        @media (max-width: 720px) { .hero-title { font-size: 28px; } [data-testid="stMetric"] { min-height: 104px; padding: 12px; } }
+        .finding { border: 1px solid #F0E2CA; border-left: 4px solid var(--amber); padding: 12px 15px; margin: 3px 0 25px; color: #475467; background: #FFFCF7; font-size: 13px; border-radius: 0 10px 10px 0; }
+        .section-label { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; }
+        [data-testid="stPlotlyChart"] { background: #FFFFFF; border: 1px solid var(--line); border-radius: 12px; padding: 10px; box-shadow: 0 3px 12px rgba(23,43,77,.035); }
+        [data-testid="stSidebar"] [data-testid="stSelectbox"] { padding-bottom: .25rem; }
+        [data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div { border-color: var(--line); border-radius: 9px; background: #FFFFFF; }
+        @media (max-width: 720px) {
+            .block-container { padding: 1.25rem 1rem 2rem; }
+            .hero-title { font-size: 29px; }
+            [data-testid="stMetric"] { min-height: 105px; padding: 12px; border-radius: 10px; }
+            [data-testid="stMetricValue"] { font-size: 23px; }
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -123,19 +133,36 @@ def render_dashboard() -> None:
     department_names = departments.set_index("department_id")["department_name"].to_dict()
     department_options = sorted(headcount["department_id"].unique())
     department_labels = {key: f"{department_names.get(key, key)} · {key}" for key in department_options}
-    st.sidebar.markdown('<div class="eyebrow">View controls</div>', unsafe_allow_html=True)
     selected_department = st.sidebar.selectbox(
         "Department", ["All reportable departments", *department_options],
         format_func=lambda value: "All reportable departments" if value == "All reportable departments" else department_labels[value],
     )
     dates = sorted(headcount["period_start"].drop_duplicates().tolist())
     default_start = dates[max(0, len(dates) - 12)]
-    selected_dates = st.sidebar.select_slider(
-        "Date range", options=dates, value=(default_start, dates[-1]),
-        format_func=lambda value: value.strftime("%b %Y"),
-    )
-    start_date, end_date = pd.Timestamp(selected_dates[0]), pd.Timestamp(selected_dates[1])
+    with st.sidebar.container(border=True):
+        st.markdown('<div class="eyebrow">Reporting period</div>', unsafe_allow_html=True)
+        date_columns = st.columns(2)
+        start_month = date_columns[0].selectbox(
+            "From",
+            dates,
+            index=dates.index(default_start),
+            format_func=lambda value: value.strftime("%b %Y"),
+            key="reporting_start_month",
+        )
+        end_month = date_columns[1].selectbox(
+            "Through",
+            dates,
+            index=len(dates) - 1,
+            format_func=lambda value: value.strftime("%b %Y"),
+            key="reporting_end_month",
+        )
+    st.sidebar.caption(f"Available data: {dates[0]:%b %Y} – {dates[-1]:%b %Y}")
+    start_date, end_date = pd.Timestamp(start_month), pd.Timestamp(end_month)
+    if start_date > end_date:
+        st.warning("Choose a reporting start month that is on or before the end month.")
+        return
     department_filter = selected_department != "All reportable departments"
+    st.caption(f"Reporting period: {start_date:%B %Y} – {end_date:%B %Y}")
 
     def scope(frame: pd.DataFrame) -> pd.DataFrame:
         result = frame.loc[frame["period_start"].between(start_date, end_date)].copy()
