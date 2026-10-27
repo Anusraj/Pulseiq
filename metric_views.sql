@@ -457,6 +457,83 @@ SELECT department_id, department_name
 FROM warehouse.dim_department
 WHERE department_id <> 'D00';
 
+CREATE OR REPLACE VIEW metrics.dashboard_attrition_exits_by_month_department AS
+SELECT period_start, department_id, group_size,
+       numerator::BIGINT AS exits
+FROM metrics.m03_exits
+WHERE department_id <> 'D00';
+
+CREATE OR REPLACE VIEW metrics.dashboard_attrition_exit_types AS
+WITH grouped AS (
+    SELECT department_id,
+           SUM(voluntary_exits)::BIGINT AS voluntary_exits,
+           SUM(exits - voluntary_exits)::BIGINT AS other_exits
+    FROM warehouse.fact_headcount_monthly
+    WHERE department_id <> 'D00'
+    GROUP BY 1
+)
+SELECT department_id, 'Voluntary'::VARCHAR AS exit_type,
+       voluntary_exits::BIGINT AS exits
+FROM grouped
+WHERE voluntary_exits >= (
+        SELECT minimum_group_size_numeric
+        FROM metrics.metric_catalog WHERE metric_id = 'M03'
+    )
+  AND other_exits >= (
+        SELECT minimum_group_size_numeric
+        FROM metrics.metric_catalog WHERE metric_id = 'M03'
+    )
+UNION ALL
+SELECT department_id, 'Other'::VARCHAR AS exit_type,
+       other_exits::BIGINT AS exits
+FROM grouped
+WHERE voluntary_exits >= (
+        SELECT minimum_group_size_numeric
+        FROM metrics.metric_catalog WHERE metric_id = 'M03'
+    )
+  AND other_exits >= (
+        SELECT minimum_group_size_numeric
+        FROM metrics.metric_catalog WHERE metric_id = 'M03'
+    );
+
+CREATE OR REPLACE VIEW metrics.dashboard_attrition_tenure AS
+WITH employee_exits AS (
+    SELECT e.employee_id, e.department_id, e.hire_date, e.exit_date
+    FROM warehouse.dim_employee e
+    WHERE e.exit_date IS NOT NULL
+      AND e.hire_date IS NOT NULL
+      AND e.department_id <> 'D00'
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY e.employee_id
+        ORDER BY
+            CASE WHEN e.valid_from <= e.exit_date
+                       AND COALESCE(e.valid_to, DATE '9999-12-31') >= e.exit_date
+                 THEN 1 ELSE 0 END DESC,
+            e.valid_from DESC,
+            e.employee_key DESC
+    ) = 1
+), banded AS (
+    SELECT department_id, employee_id,
+           CASE
+               WHEN exit_date < hire_date + INTERVAL '1 year' THEN '< 1 year'
+               WHEN exit_date < hire_date + INTERVAL '3 years' THEN '1-< 3 years'
+               WHEN exit_date < hire_date + INTERVAL '5 years' THEN '3-< 5 years'
+               ELSE '5+ years'
+           END AS tenure_band
+    FROM employee_exits
+), grouped AS (
+    SELECT department_id, tenure_band,
+           COUNT(DISTINCT employee_id)::BIGINT AS exits
+    FROM banded
+    GROUP BY 1, 2
+)
+SELECT department_id, tenure_band, exits
+FROM grouped
+WHERE exits >= (
+    SELECT minimum_group_size_numeric
+    FROM metrics.metric_catalog WHERE metric_id = 'M04'
+);
+
 CREATE OR REPLACE VIEW metrics.dashboard_headcount_by_work_mode AS
 WITH snapshots AS (
     SELECT DISTINCT period_start, department_id,
