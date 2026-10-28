@@ -360,6 +360,55 @@ SELECT period_start, NULL::VARCHAR AS department_id,
 FROM grouped
 WHERE group_size >= (SELECT minimum_group_size_numeric FROM metrics.metric_catalog WHERE metric_id = 'M25');
 
+CREATE OR REPLACE VIEW metrics.dashboard_team_sprint_productivity AS
+WITH task_groups AS (
+    SELECT t.team_id, t.sprint_id, s.start_date AS period_start,
+           s.end_date AS sprint_end, s.working_days,
+           COUNT(*) FILTER (WHERE LOWER(t.status) <> 'cancelled')::BIGINT AS planned_tasks,
+           COUNT(*) FILTER (WHERE LOWER(t.status) = 'cancelled')::BIGINT AS cancelled_tasks,
+           STRING_AGG(DISTINCT t.task_type, ', ' ORDER BY t.task_type) FILTER (
+               WHERE LOWER(t.status) <> 'cancelled'
+           ) AS task_types,
+           COUNT(*) FILTER (WHERE LOWER(t.status) = 'blocked')::BIGINT AS blocked_tasks,
+           COUNT(*) FILTER (
+               WHERE LOWER(t.status) <> 'cancelled' AND COALESCE(t.reopened_count, 0) > 0
+           )::BIGINT AS reopened_tasks,
+           SUM(COALESCE(t.reopened_count, 0)) FILTER (
+               WHERE LOWER(t.status) <> 'cancelled'
+           )::BIGINT AS reopen_events
+    FROM warehouse.fact_task t
+    JOIN warehouse.dim_sprint s ON s.sprint_id = t.sprint_id
+    GROUP BY 1, 2, 3, 4, 5
+)
+SELECT g.team_id, tm.team_name, tm.active_members, tm.planning_cadence,
+       g.task_types, g.sprint_id, s.sprint_name,
+       g.period_start, g.sprint_end, g.working_days,
+       g.planned_tasks, g.cancelled_tasks, g.blocked_tasks,
+       g.reopened_tasks, g.reopen_events,
+       completion.metric_value AS completion_rate,
+       on_time.metric_value AS on_time_rate,
+       velocity.metric_value AS velocity_points,
+       cycle.metric_value AS average_cycle_days
+FROM task_groups g
+JOIN warehouse.dim_team tm ON tm.team_id = g.team_id
+JOIN warehouse.dim_sprint s ON s.sprint_id = g.sprint_id
+LEFT JOIN metrics.m22_task_completion_rate completion
+  ON completion.period_start = g.period_start
+ AND completion.breakdown_id = g.team_id || '/' || g.sprint_id
+LEFT JOIN metrics.m23_on_time_delivery_rate on_time
+  ON on_time.period_start = g.period_start
+ AND on_time.breakdown_id = g.team_id || '/' || g.sprint_id
+LEFT JOIN metrics.m24_velocity velocity
+  ON velocity.period_start = g.period_start
+ AND velocity.breakdown_id = g.team_id || '/' || g.sprint_id
+LEFT JOIN metrics.m25_average_cycle_time cycle
+  ON cycle.period_start = g.period_start
+ AND cycle.breakdown_id = g.team_id || '/' || g.sprint_id
+WHERE g.planned_tasks >= (
+    SELECT minimum_group_size_numeric
+    FROM metrics.metric_catalog WHERE metric_id = 'M22'
+);
+
 CREATE OR REPLACE VIEW metrics.m26_anomaly_flag_rate AS
 WITH grouped AS (
     SELECT DATE_TRUNC('month', period)::DATE AS period_start, source_dataset AS breakdown_id,
