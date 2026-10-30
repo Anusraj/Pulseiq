@@ -689,3 +689,133 @@ WHERE LEAST(h.group_size, e.group_size) >= (
     SELECT minimum_group_size_numeric
     FROM metrics.metric_catalog WHERE metric_id = 'M29'
 );
+
+CREATE OR REPLACE VIEW metrics.dashboard_budget_vs_actual AS
+WITH comparison AS (
+    SELECT DATE_TRUNC('month', budget.month)::DATE AS period_start,
+           budget.department_id, department.department_name,
+           actual.group_size, budget.budget_payroll_cost,
+           actual.metric_value AS actual_payroll_cost,
+           actual.metric_value - budget.budget_payroll_cost AS variance,
+           100.0 * (actual.metric_value - budget.budget_payroll_cost)
+               / NULLIF(budget.budget_payroll_cost, 0) AS variance_pct
+    FROM warehouse.budget_payroll_dept_month budget
+    JOIN warehouse.dim_department department
+      ON department.department_id = budget.department_id
+    LEFT JOIN metrics.m09_employer_payroll_cost actual
+      ON actual.department_id = budget.department_id
+     AND DATE_TRUNC('month', actual.period_start)::DATE = budget.month
+    WHERE actual.group_size >= (
+        SELECT minimum_group_size_numeric
+        FROM metrics.metric_catalog WHERE metric_id = 'M09'
+    )
+)
+SELECT period_start, department_id, department_name, group_size,
+       budget_payroll_cost, actual_payroll_cost,
+       ROUND(variance, 2) AS variance,
+       ROUND(variance_pct, 2) AS variance_pct,
+       RANK() OVER (
+           PARTITION BY period_start
+           ORDER BY variance DESC NULLS LAST
+       )::BIGINT AS overspend_rank,
+       CASE
+           WHEN variance <= 0 THEN 'GREEN'
+           WHEN variance_pct <= 5 THEN 'AMBER'
+           ELSE 'RED'
+       END::VARCHAR AS traffic_light
+FROM comparison;
+
+CREATE OR REPLACE VIEW metrics.dashboard_kpi_target_status AS
+WITH task_actual AS (
+    SELECT team.department_id,
+           DATE_TRUNC('month', sprint.start_date)::DATE AS period_start,
+           COUNT(*) FILTER (WHERE LOWER(task.status) <> 'cancelled')::BIGINT AS group_size,
+           100.0 * COUNT(*) FILTER (WHERE LOWER(task.status) = 'done')
+               / NULLIF(COUNT(*) FILTER (WHERE LOWER(task.status) <> 'cancelled'), 0)
+               AS actual_value
+    FROM warehouse.fact_task task
+    JOIN warehouse.dim_team team ON team.team_id = task.team_id
+    JOIN warehouse.dim_sprint sprint ON sprint.sprint_id = task.sprint_id
+    WHERE team.department_id IS NOT NULL
+    GROUP BY 1, 2
+    HAVING COUNT(*) FILTER (WHERE LOWER(task.status) <> 'cancelled') >= (
+        SELECT minimum_group_size_numeric
+        FROM metrics.metric_catalog WHERE metric_id = 'M22'
+    )
+),
+target_actual AS (
+    SELECT DATE_TRUNC('month', target.month)::DATE AS period_start,
+           target.department_id, department.department_name,
+           'Attendance rate'::VARCHAR AS kpi_name,
+           attendance.group_size,
+           100.0 * attendance.metric_value AS actual_value,
+           100.0 * target.attendance_rate_target AS target_value,
+           '%'::VARCHAR AS unit,
+           'HIGHER'::VARCHAR AS good_direction,
+           target.attendance_rate_target IS NOT NULL AS target_available
+    FROM warehouse.kpi_targets target
+    JOIN warehouse.dim_department department
+      ON department.department_id = target.department_id
+    LEFT JOIN metrics.m13_attendance_rate attendance
+      ON attendance.department_id = target.department_id
+     AND DATE_TRUNC('month', attendance.period_start)::DATE = target.month
+
+    UNION ALL
+
+    SELECT DATE_TRUNC('month', target.month)::DATE,
+           target.department_id, department.department_name,
+           'Overtime share', overtime.group_size,
+           overtime.metric_value, target.overtime_share_target_pct,
+           '%', 'LOWER',
+           target.overtime_share_target_pct IS NOT NULL
+    FROM warehouse.kpi_targets target
+    JOIN warehouse.dim_department department
+      ON department.department_id = target.department_id
+    LEFT JOIN metrics.m11_overtime_share overtime
+      ON overtime.department_id = target.department_id
+     AND DATE_TRUNC('month', overtime.period_start)::DATE = target.month
+
+    UNION ALL
+
+    SELECT DATE_TRUNC('month', target.month)::DATE,
+           target.department_id, department.department_name,
+           'Monthly attrition', attrition.group_size,
+           attrition.metric_value, target.attrition_monthly_target_pct,
+           '%', 'LOWER',
+           target.attrition_monthly_target_pct IS NOT NULL
+    FROM warehouse.kpi_targets target
+    JOIN warehouse.dim_department department
+      ON department.department_id = target.department_id
+    LEFT JOIN metrics.m04_attrition_rate_monthly attrition
+      ON attrition.department_id = target.department_id
+     AND DATE_TRUNC('month', attrition.period_start)::DATE = target.month
+
+    UNION ALL
+
+    SELECT DATE_TRUNC('month', target.month)::DATE,
+           target.department_id, department.department_name,
+           'Task completion', task.group_size,
+           task.actual_value, target.task_completion_target_pct,
+           '%', 'HIGHER',
+           target.task_completion_target_pct IS NOT NULL
+    FROM warehouse.kpi_targets target
+    JOIN warehouse.dim_department department
+      ON department.department_id = target.department_id
+    LEFT JOIN task_actual task
+      ON task.department_id = target.department_id
+     AND task.period_start = target.month
+)
+SELECT period_start, department_id, department_name, kpi_name,
+       group_size, ROUND(actual_value, 2) AS actual_value,
+       ROUND(target_value, 2) AS target_value,
+       ROUND(actual_value - target_value, 2) AS variance_to_target,
+       unit, good_direction,
+       CASE
+           WHEN NOT target_available THEN 'NO_TARGET'
+           WHEN actual_value IS NULL THEN 'NO_REPORTABLE_ACTUAL'
+           WHEN (good_direction = 'HIGHER' AND actual_value >= target_value)
+             OR (good_direction = 'LOWER' AND actual_value <= target_value)
+               THEN 'GREEN'
+           ELSE 'RED'
+       END::VARCHAR AS traffic_light
+FROM target_actual;

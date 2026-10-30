@@ -36,6 +36,8 @@ DIMENSION_SOURCES = (
 )
 
 FACT_SOURCES = (
+    "budget_payroll_dept_month",
+    "kpi_targets",
     "fact_payroll",
     "fact_attendance_monthly",
     "fact_leave",
@@ -51,6 +53,8 @@ FACT_SOURCES = (
 )
 
 FACT_PRIMARY_KEYS = {
+    "budget_payroll_dept_month": ("department_id", "month"),
+    "kpi_targets": ("department_id", "month"),
     "fact_payroll": ("payroll_item_id",),
     "fact_attendance_monthly": ("attendance_fact_id",),
     "fact_leave": ("leave_request_id",),
@@ -272,6 +276,14 @@ def extend_date_dimension(connection: Any) -> int:
 
 def create_facts(connection: Any) -> None:
     sql_by_fact = {
+        "budget_payroll_dept_month": (
+            "LEFT JOIN warehouse.dim_department d ON b.department_id = d.department_id",
+            "d.department_key",
+        ),
+        "kpi_targets": (
+            "LEFT JOIN warehouse.dim_department d ON b.department_id = d.department_id",
+            "d.department_key",
+        ),
         "fact_payroll": (
             "LEFT JOIN warehouse.dim_employee e ON b.employee_key = e.employee_key "
             "LEFT JOIN warehouse.dim_department d ON b.department_id = d.department_id "
@@ -531,6 +543,8 @@ def run_orphan_checks(connection: Any) -> list[dict[str, Any]]:
         ("fact_attrition_risk.date_key", "fact_attrition_risk", "date_key", "dim_date", "date_key", False),
         ("fact_forecast.department_id", "fact_forecast", "department_id", "dim_department", "department_id", False),
         ("fact_forecast.forecast_date_key", "fact_forecast", "forecast_date_key", "dim_date", "date_key", False),
+        ("budget_payroll_dept_month.department_key", "budget_payroll_dept_month", "department_key", "dim_department", "department_key", False),
+        ("kpi_targets.department_key", "kpi_targets", "department_key", "dim_department", "department_key", False),
     ]
     results: list[dict[str, Any]] = []
     for name, source, source_column, target, target_column, optional in checks:
