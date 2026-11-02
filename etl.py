@@ -14,6 +14,8 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
+from clean_data import prepare_cleaned_data
+
 try:
     import duckdb
 except ImportError as exc:
@@ -420,15 +422,24 @@ def main() -> int:
 
     contracts = parse_contracts()
     dictionary = parse_dictionary()
+    cleaned_sources, cleaning_counts = prepare_cleaned_data()
+    print(
+        "Using cleaned feeds: "
+        f"{cleaning_counts['duplicate_payroll_rows_removed']} duplicate payroll rows removed, "
+        f"{cleaning_counts['orphan_payroll_rows_excluded']} orphan payroll rows excluded, "
+        f"{cleaning_counts['employee_intervals_corrected']} employee intervals corrected.",
+        flush=True,
+    )
     loaded: dict[str, tuple[list[str], list[dict[str, str]], list[str]]] = {}
     sources: dict[str, Path] = {}
     for path in csv_files:
         name = path.stem.lower()
         if name in loaded:
             raise ValueError(f"Two source files map to table {name!r}")
-        print(f"Reading {path.name}...", flush=True)
-        loaded[name] = read_csv_file(path)
-        sources[name] = path
+        source = cleaned_sources.get(name, path)
+        print(f"Reading {source.name}...", flush=True)
+        loaded[name] = read_csv_file(source)
+        sources[name] = source
         print(f"  {len(loaded[name][1]):,} data rows", flush=True)
 
     print("Building reference lookups...", flush=True)

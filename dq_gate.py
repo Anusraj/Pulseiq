@@ -20,9 +20,12 @@ except ImportError as exc:
     ) from exc
 
 
+from clean_data import CLEANED_DIR
+
+
 ROOT = Path(__file__).resolve().parent
 DATABASE = ROOT / "pulseiq.duckdb"
-CATALOG = ROOT / "data" / "raw" / "dq_checks_catalog.csv"
+CATALOG = CLEANED_DIR / "dq_checks_catalog.csv"
 RESULTS_CSV = ROOT / "dq_results.csv"
 FINDINGS_CSV = ROOT / "dq_findings.csv"
 SELF_TEST_CSV = ROOT / "dq_self_test_results.csv"

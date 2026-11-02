@@ -136,6 +136,49 @@ SELECT period_start, department_id, NULL::VARCHAR AS breakdown_id, group_size,
 FROM grouped
 WHERE group_size >= (SELECT minimum_group_size_numeric FROM metrics.metric_catalog WHERE metric_id = 'M10');
 
+CREATE OR REPLACE VIEW metrics.dashboard_payroll_department_month AS
+SELECT DATE_TRUNC('month', gross.period_start)::DATE AS period_start,
+       gross.department_id, department.department_name,
+       gross.group_size, gross.metric_value AS gross_pay,
+       net.metric_value AS net_pay, cost.metric_value AS employer_cost,
+       cost_per_head.metric_value AS cost_per_employee
+FROM metrics.m07_gross_pay gross
+JOIN metrics.m08_net_pay net
+  ON net.period_start = gross.period_start
+ AND net.department_id = gross.department_id
+JOIN metrics.m09_employer_payroll_cost cost
+  ON cost.period_start = gross.period_start
+ AND cost.department_id = gross.department_id
+JOIN metrics.m10_cost_per_head cost_per_head
+  ON cost_per_head.period_start = gross.period_start
+ AND cost_per_head.department_id = gross.department_id
+JOIN warehouse.dim_department department
+  ON department.department_id = gross.department_id;
+
+CREATE OR REPLACE VIEW metrics.dashboard_payroll_monthly_total AS
+WITH payroll AS (
+    SELECT DATE_TRUNC('month', period_end_date)::DATE AS period_start,
+           COUNT(DISTINCT employee_id)::BIGINT AS group_size,
+           ROUND(SUM(gross_pay), 2) AS gross_pay,
+           ROUND(SUM(net_pay), 2) AS net_pay,
+           ROUND(SUM(employer_cost), 2) AS employer_cost,
+           ROUND(SUM(employer_cost) / NULLIF(COUNT(DISTINCT employee_id), 0), 2)
+               AS cost_per_employee
+    FROM metrics.payroll_eligible
+    GROUP BY 1
+)
+SELECT payroll.period_start, payroll.group_size, payroll.gross_pay,
+       payroll.net_pay, payroll.employer_cost, payroll.cost_per_employee,
+       ledger.numerator AS ledger_salary_related_expense,
+       ROUND(payroll.employer_cost - ledger.numerator, 2) AS reconciliation_difference
+FROM payroll
+JOIN metrics.m19_payroll_as_percent_of_revenue ledger
+  ON ledger.period_start = payroll.period_start
+WHERE payroll.group_size >= (
+    SELECT minimum_group_size_numeric
+    FROM metrics.metric_catalog WHERE metric_id = 'M09'
+);
+
 CREATE OR REPLACE VIEW metrics.m11_overtime_share AS
 WITH grouped AS (
     SELECT period_end_date AS period_start, department_id, COUNT(DISTINCT employee_id) AS group_size,
@@ -819,3 +862,76 @@ SELECT period_start, department_id, department_name, kpi_name,
            ELSE 'RED'
        END::VARCHAR AS traffic_light
 FROM target_actual;
+
+CREATE OR REPLACE VIEW metrics.dashboard_pnl_monthly AS
+WITH monthly AS (
+    SELECT CAST(l.posting_period || '-01' AS DATE) AS period_start,
+           SUM(CASE
+                   WHEN a.account_type = 'INCOME' AND a.is_group = 'N'
+                   THEN -l.signed_amount_debit_positive ELSE 0
+               END) AS revenue,
+           SUM(CASE
+                   WHEN a.account_type = 'EXPENSE' AND a.is_group = 'N'
+                   THEN l.signed_amount_debit_positive ELSE 0
+               END) AS expenses,
+           SUM(CASE
+                   WHEN a.account_type = 'INCOME' AND a.is_group = 'N'
+                        AND TRY_CAST(a.account_code AS INTEGER) BETWEEN 4001 AND 4004
+                   THEN -l.signed_amount_debit_positive ELSE 0
+               END) AS operating_revenue,
+           SUM(CASE
+                   WHEN a.account_code = '4900' AND a.is_group = 'N'
+                   THEN -l.signed_amount_debit_positive ELSE 0
+               END) AS other_income,
+           COUNT(*)::BIGINT AS ledger_lines
+    FROM warehouse.fact_ledger l
+    JOIN warehouse.dim_account a ON a.account_code = l.account_code
+    WHERE a.statement = 'Profit & Loss' AND a.is_group = 'N'
+    GROUP BY 1
+)
+SELECT period_start, ledger_lines,
+       ROUND(revenue, 2) AS revenue,
+       ROUND(operating_revenue, 2) AS operating_revenue,
+       ROUND(other_income, 2) AS other_income,
+       ROUND(expenses, 2) AS expenses,
+       ROUND(revenue - expenses, 2) AS net_profit,
+       ROUND(100.0 * (revenue - expenses) / NULLIF(revenue, 0), 2) AS operating_margin
+FROM monthly;
+
+CREATE OR REPLACE VIEW metrics.dashboard_expense_category_monthly AS
+SELECT DATE_TRUNC('month', e.expense_date)::DATE AS period_start,
+       a.account_code AS category_account,
+       a.account_name AS category,
+       COUNT(*)::BIGINT AS bill_count,
+       ROUND(SUM(e.amount_excl_gst), 2) AS spend_excl_gst
+FROM warehouse.fact_expense e
+JOIN warehouse.dim_account a ON a.account_key = e.account_key
+WHERE a.statement = 'Profit & Loss'
+  AND a.account_type = 'EXPENSE'
+  AND a.is_group = 'N'
+GROUP BY 1, 2, 3;
+
+CREATE OR REPLACE VIEW metrics.dashboard_expense_vendor_monthly AS
+SELECT DATE_TRUNC('month', e.expense_date)::DATE AS period_start,
+       v.vendor_id, v.vendor_name,
+       COUNT(*)::BIGINT AS bill_count,
+       ROUND(SUM(e.amount_excl_gst), 2) AS spend_excl_gst
+FROM warehouse.fact_expense e
+JOIN warehouse.dim_vendor v ON v.vendor_key = e.vendor_key
+JOIN warehouse.dim_account a ON a.account_key = e.account_key
+WHERE a.statement = 'Profit & Loss'
+  AND a.account_type = 'EXPENSE'
+  AND a.is_group = 'N'
+GROUP BY 1, 2, 3;
+
+CREATE OR REPLACE VIEW metrics.dashboard_pnl_tieout AS
+SELECT p.period_start, p.revenue, p.expenses, p.net_profit,
+       TRY_CAST(REPLACE(r.ledger_revenue, ',', '') AS DOUBLE) AS headline_revenue,
+       TRY_CAST(REPLACE(r.ledger_total_expense, ',', '') AS DOUBLE) AS headline_expenses,
+       TRY_CAST(REPLACE(r.ledger_net_profit, ',', '') AS DOUBLE) AS headline_net_profit,
+       ROUND(p.revenue - TRY_CAST(REPLACE(r.ledger_revenue, ',', '') AS DOUBLE), 2) AS revenue_difference,
+       ROUND(p.expenses - TRY_CAST(REPLACE(r.ledger_total_expense, ',', '') AS DOUBLE), 2) AS expense_difference,
+       ROUND(p.net_profit - TRY_CAST(REPLACE(r.ledger_net_profit, ',', '') AS DOUBLE), 2) AS profit_difference
+FROM metrics.dashboard_pnl_monthly p
+JOIN raw.reconciliation_answer_key r
+  ON TRY_CAST(r.month AS DATE) = p.period_start;

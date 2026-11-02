@@ -154,8 +154,7 @@ def render_attendance_page() -> None:
     latest_numerator = float(latest_attendance["numerator"].sum())
     latest_denominator = float(latest_attendance["denominator"].sum())
     latest_rate = 100 * latest_numerator / latest_denominator if latest_denominator else 0
-    latest_late = scope(late_arrivals)
-    latest_late = latest_late.loc[latest_late["period_start"] == latest_period]
+    selected_late_arrivals = scope(late_arrivals)
     latest_overtime = scope(overtime)
     latest_overtime = latest_overtime.loc[latest_overtime["period_start"] == latest_period]
     leave_period = scope(leave)
@@ -173,9 +172,9 @@ def render_attendance_page() -> None:
     metric_columns = st.columns(4)
     metric_columns[0].metric("Attendance rate", f"{latest_rate:.2f}%", f"{latest_period:%b %Y}")
     metric_columns[1].metric(
-        "Late arrivals",
-        f"{int(latest_late['late_arrivals'].sum()):,}",
-        f"{latest_period:%b %Y}",
+        "Late-arrival instances",
+        f"{int(selected_late_arrivals['late_arrivals'].sum()):,}",
+        "selected period",
     )
     metric_columns[2].metric(
         "Overtime hours",

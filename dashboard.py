@@ -188,12 +188,12 @@ def render_dashboard() -> None:
 
     st.markdown('<div class="section-label">Current position and movement</div>', unsafe_allow_html=True)
     metric_columns = st.columns(5)
-    metric_columns[0].metric("Headcount", f"{int(latest_value):,}")
+    metric_columns[0].metric("Period-end headcount", f"{int(latest_value):,}")
     metric_columns[1].metric("Net change", f"{change:+,.0f}", f"{change_pct:+.1f}%")
     metric_columns[2].metric("Hires", f"{int(total_hires):,}")
     metric_columns[3].metric("Exits", f"{int(total_exits):,}")
     metric_columns[4].metric("Net hires", f"{int(total_net_hires):+,}")
-    st.caption("Reportable department-level M01 headcount; movement metrics cover the selected range. Small groups are suppressed, so totals may exclude groups below five.")
+    st.caption("Headcount is the latest month's ending count; movement metrics cover the selected range. Small groups are suppressed, so totals may exclude groups below five.")
 
     direction = "grew" if change > 0 else "declined" if change < 0 else "was unchanged"
     direction_text = f"{abs(change_pct):.1f}%" if change else "0%"

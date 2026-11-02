@@ -8,12 +8,12 @@ The normal command runs the full ETL and then all 14 data-quality checks:
 python etl.py
 ```
 
-Checks read the untouched `raw` source tables, rather than only the rows that
-passed Task 1 contracts. That lets the gate catch business-quality problems
-even when a row was also quarantined for a separate contract failure. The raw
-feeds are retained and check findings are persisted; a critical failure makes
+The source CSVs in `data/raw` are retained unchanged. ETL uses cleaned copies
+for payroll, employee history, and the DQ catalog; its DuckDB `raw` schema
+represents the feeds selected for that run. Other feeds are loaded directly
+from their source CSVs. Check findings are persisted; a critical failure makes
 the process exit nonzero so a scheduler or downstream publication step can
-stop. The loader does not discard or rewrite a source row to make a check pass.
+stop.
 
 Prove each SQL check works with the isolated test command:
 
@@ -57,23 +57,37 @@ warnings fail, and `PASS` otherwise.
 | DQ-C11 AI feeds are fresh | Attrition scores are more than seven days behind the latest batch, or anomaly scoring is older than 24 hours at load time. | Warning | Retain and report; stale model output should not be presented as current. |
 | DQ-C12 Dimension history does not overlap | Two employee SCD versions cover the same date. | Critical | Block publication; one fact can otherwise join to two employee versions. |
 | DQ-C13 Pipeline freshness | No successful ETL run exists, or the latest successful load is older than 24 hours. | Critical | Block publication; consumers must not assume stale data is current. |
-| DQ-C14 Minimum group size | A manager-facing department/month/metric aggregate has fewer members than its metric-dictionary minimum. | Critical | Block publication of affected cells; suppress or combine small groups. |
+| DQ-C14 Minimum group size | A source summary or attrition feed contains groups below its metric-dictionary minimum. | Warning | The metric build must suppress these groups; its independent validation blocks any view that exposes them. |
 
 Critical failures gate publication, not source capture: ingesting and retaining
 the raw data and the failure evidence is necessary for audit and repair.
 Warnings do not make the entire load unavailable, but the report identifies
 the rows that require an owner to review them.
 
+Before ETL, `python clean_data.py` writes cleaned payroll and employee
+dimension feeds under `data/cleaned` without changing the source feeds in
+`data/raw`. ETL regenerates and uses these cleaned copies automatically. The
+cleaner removes a repeated employee/run row only when all payroll values other
+than `payroll_item_id` match, excludes payroll rows with no employee dimension
+record, and closes overlapping SCD intervals at the day before the next
+version. Conflicting payroll rows or ambiguous employee history stop the clean
+step and require review rather than an arbitrary survivor choice.
+
+DQ-C14 reports source summary groups below the privacy threshold as a warning,
+not a publication blocker: the metric build independently validates every
+published official view and fails if any view exposes a below-threshold group.
+
 ## Seeded-issue comparison
 
-The supplied `data/raw/dq_known_issues.csv` lists 11 planted issues. All 11
-are represented in the current raw-feed findings:
+The supplied `data/raw/dq_known_issues.csv` lists 11 planted issues. Ten are
+checked by the DQ gate; the duplicate payroll issue is removed by the
+pre-ETL cleaner, with its source rows retained in `data/raw/fact_payroll.csv`:
 
 | Seeded issue | Expected check | Result |
 |---|---|---|
 | DQ-01 attendance after exit | DQ-C05 | Detected (4 attendance rows) |
-| DQ-02 duplicate payroll | DQ-C03 | Detected (2 employee/run groups) |
-| DQ-03 payroll employees missing from dimension | DQ-C04 | Detected (2 payroll rows) |
+| DQ-02 duplicate payroll | DQ-C03 | Removed from cleaned feed (2 identical employee/run rows) |
+| DQ-03 payroll employees missing from dimension | DQ-C04 | Excluded from cleaned feed (2 payroll rows) |
 | DQ-04 June payroll/ledger mismatch | DQ-C01 | Detected (June variance ₹18,450) |
 | DQ-05 overpaid invoice | DQ-C07 | Detected (1 invoice) |
 | DQ-06 completion before task start | DQ-C09 | Detected (12 tasks) |
@@ -81,9 +95,10 @@ are represented in the current raw-feed findings:
 | DQ-08 leave end before start | DQ-C10 | Detected (2 requests) |
 | DQ-09 stale attrition predictions | DQ-C11 | Detected (5 predictions) |
 | DQ-10 expense total mismatch | DQ-C08 | Detected (1 expense) |
-| DQ-11 overlapping employee SCD versions | DQ-C12 | Detected (1 employee-version pair) |
+| DQ-11 overlapping employee SCD versions | DQ-C12 | Corrected in cleaned dimension (1 interval) |
 
-**Known-issue misses: 0 of 11.** This comparison is against the supplied
+**Known issues accounted for: 11 of 11** (eight detected by the DQ gate and
+three handled by the cleaner). This comparison is against the supplied
 `dq_known_issues.csv`. The separate `04_Validation_Vault/unlock_PQ-03` answer
 key was not present in this repository or local project files, so it could
 not be opened. No claim is made about additional issues that may be listed

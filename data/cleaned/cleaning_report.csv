@@ -1,0 +1,7 @@
+action,table,record_id,reason
+deduplicated,fact_payroll,PI-X0001,identical employee/run record; retained PI-004059
+deduplicated,fact_payroll,PI-X0002,identical employee/run record; retained PI-000761
+excluded,fact_payroll,PI-X0003,employee_id EMP-9001 is absent from dim_employee
+excluded,fact_payroll,PI-X0004,employee_id EMP-9002 is absent from dim_employee
+corrected_interval,dim_employee,EMP-0001/100000,valid_to 2012-05-12 changed to 2012-05-02 to precede next version
+reclassified,dq_checks_catalog,DQ-C14,small source groups are checked again against published metric views by metrics.py

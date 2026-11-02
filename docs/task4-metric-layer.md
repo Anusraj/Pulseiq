@@ -77,6 +77,13 @@ unknown employee surrogate key and collapses exact duplicate employee/run
 records to one copy. It does not alter the source or warehouse facts. Other
 inconsistent duplicate groups remain visible to the DQ gate; a critical DQ
 failure must be resolved before business users treat any metrics as publishable.
+The ETL cleaner now writes a deduplicated payroll feed and corrected employee
+history under `data/cleaned` and uses them for the warehouse build, while
+preserving the original supplied CSVs under `data/raw`. It removes duplicate
+employee/run rows only when all payroll values match, excludes payroll rows
+without an employee-dimension record, and corrects overlapping version ends.
+Conflicting payroll values or ambiguous employee history stop cleaning and
+require review.
 
 For metrics without a minimum in the dictionary (`n/a`), the metric layer does
 not invent a privacy threshold. The catalog makes that explicit. The M27
