@@ -14,6 +14,7 @@ The app is not publicly deployed. Run it locally with the steps below. Dashboard
 - Streamlit workforce dashboard with department/date filters, five KPIs, headcount trend, department mix, location-tier mix, and work-mode mix.
 - M29 Net hires: hires minus exits at department/month grain, displayed for the selected dashboard period.
 - Profit and loss page with monthly ledger margin, expense categories, top vendors, and README headline tie-out.
+- Receivables and cash page with ageing buckets, client payment behaviour, overdue clients, and cash flow.
 - Insight-led chart headlines and compact, three-color visual semantics.
 
 ## Tech stack
@@ -99,7 +100,7 @@ The dashboard queries metric views only. M01-M03 provide headcount, hires, and e
 - M29 excludes transfers and sums reportable department/month values, so suppressed groups are not represented in its dashboard total.
 - Next: connect a scheduled refresh, add deployment and access controls, and automate browser-level tests across desktop and mobile layouts.
 
-Further evidence and definitions: [Task 2 warehouse](docs/task2-evidence.md), [Task 4 metric layer](docs/task4-metric-layer.md), [Task 5 dashboard](docs/task5-evidence.md), and [Task 11 P&L](docs/task11-evidence.md).
+Further evidence and definitions: [Task 2 warehouse](docs/task2-evidence.md), [Task 4 metric layer](docs/task4-metric-layer.md), [Task 5 dashboard](docs/task5-evidence.md), [Task 11 P&L](docs/task11-evidence.md), and [Task 12 receivables and cash](docs/task12-evidence.md).
 
 ## What I learned and problems solved (Tasks 1–5)
 

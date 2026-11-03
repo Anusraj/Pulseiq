@@ -935,3 +935,113 @@ SELECT p.period_start, p.revenue, p.expenses, p.net_profit,
 FROM metrics.dashboard_pnl_monthly p
 JOIN raw.reconciliation_answer_key r
   ON TRY_CAST(r.month AS DATE) = p.period_start;
+
+CREATE OR REPLACE VIEW metrics.dashboard_receivables_ageing AS
+WITH cutoff AS (
+    SELECT MAX(invoice_date) AS as_of_date
+    FROM warehouse.fact_invoice
+),
+open_invoices AS (
+    SELECT i.invoice_id, i.client_id, i.balance_due,
+           GREATEST(DATE_DIFF('day', i.due_date, c.as_of_date), 0)::BIGINT AS days_past_due,
+           CASE
+               WHEN GREATEST(DATE_DIFF('day', i.due_date, c.as_of_date), 0) <= 30
+                   THEN '0-30 days'
+               WHEN DATE_DIFF('day', i.due_date, c.as_of_date) <= 60
+                   THEN '31-60 days'
+               WHEN DATE_DIFF('day', i.due_date, c.as_of_date) <= 90
+                   THEN '61-90 days'
+               ELSE '90+ days'
+           END::VARCHAR AS ageing_bucket
+    FROM warehouse.fact_invoice i
+    CROSS JOIN cutoff c
+    WHERE UPPER(i.status) IN ('SENT', 'OVERDUE', 'PARTIALLY_PAID')
+      AND i.balance_due > 0
+),
+buckets AS (
+    SELECT * FROM (VALUES
+        ('0-30 days', 1),
+        ('31-60 days', 2),
+        ('61-90 days', 3),
+        ('90+ days', 4)
+    ) AS b(ageing_bucket, sort_order)
+),
+aggregated AS (
+    SELECT ageing_bucket, COUNT(*)::BIGINT AS invoice_count,
+           ROUND(SUM(balance_due), 2) AS open_receivables,
+           MAX(days_past_due)::BIGINT AS oldest_days_past_due
+    FROM open_invoices
+    GROUP BY 1
+)
+SELECT b.ageing_bucket,
+       COALESCE(a.invoice_count, 0)::BIGINT AS invoice_count,
+       COALESCE(a.open_receivables, 0)::DOUBLE AS open_receivables,
+       COALESCE(a.oldest_days_past_due, 0)::BIGINT AS oldest_days_past_due
+FROM buckets b
+LEFT JOIN aggregated a USING (ageing_bucket)
+ORDER BY b.sort_order;
+
+CREATE OR REPLACE VIEW metrics.dashboard_receivables_summary AS
+WITH cutoff AS (
+    SELECT MAX(invoice_date) AS as_of_date
+    FROM warehouse.fact_invoice
+)
+SELECT c.as_of_date,
+       COUNT(*)::BIGINT AS open_invoice_count,
+       ROUND(SUM(i.balance_due), 2) AS total_open_receivables
+FROM warehouse.fact_invoice i
+CROSS JOIN cutoff c
+WHERE UPPER(i.status) IN ('SENT', 'OVERDUE', 'PARTIALLY_PAID')
+  AND i.balance_due > 0
+GROUP BY 1;
+
+CREATE OR REPLACE VIEW metrics.dashboard_overdue_clients AS
+WITH cutoff AS (
+    SELECT MAX(invoice_date) AS as_of_date
+    FROM warehouse.fact_invoice
+)
+SELECT i.client_id, c.client_name,
+       COUNT(*)::BIGINT AS overdue_invoice_count,
+       ROUND(SUM(i.balance_due), 2) AS overdue_receivables,
+       MAX(DATE_DIFF('day', i.due_date, cutoff.as_of_date))::BIGINT AS oldest_days_past_due
+FROM warehouse.fact_invoice i
+JOIN warehouse.dim_client c ON c.client_key = i.client_key
+CROSS JOIN cutoff
+WHERE UPPER(i.status) IN ('SENT', 'OVERDUE', 'PARTIALLY_PAID')
+  AND i.balance_due > 0
+  AND i.due_date < cutoff.as_of_date
+GROUP BY 1, 2;
+
+CREATE OR REPLACE VIEW metrics.dashboard_client_days_to_pay AS
+SELECT i.client_id, c.client_name, c.payment_terms_days,
+       c.payment_behaviour,
+       COUNT(*)::BIGINT AS paid_invoice_count,
+       ROUND(AVG(i.days_to_pay), 2) AS average_days_to_pay,
+       ROUND(AVG(i.days_to_pay - c.payment_terms_days), 2) AS average_days_over_terms
+FROM warehouse.fact_invoice i
+JOIN warehouse.dim_client c ON c.client_key = i.client_key
+WHERE UPPER(i.status) = 'PAID'
+  AND i.days_to_pay IS NOT NULL
+GROUP BY 1, 2, 3, 4;
+
+CREATE OR REPLACE VIEW metrics.dashboard_cash_flow_monthly AS
+WITH cash_in AS (
+    SELECT DATE_TRUNC('month', payment_date)::DATE AS period_start,
+           SUM(amount) AS cash_in
+    FROM warehouse.fact_invoice_payment
+    GROUP BY 1
+),
+cash_out AS (
+    SELECT DATE_TRUNC('month', paid_date)::DATE AS period_start,
+           SUM(total_amount) AS cash_out
+    FROM warehouse.fact_expense
+    WHERE UPPER(status) = 'PAID'
+      AND paid_date IS NOT NULL
+    GROUP BY 1
+)
+SELECT COALESCE(i.period_start, o.period_start) AS period_start,
+       ROUND(COALESCE(i.cash_in, 0), 2) AS cash_in,
+       ROUND(COALESCE(o.cash_out, 0), 2) AS cash_out,
+       ROUND(COALESCE(i.cash_in, 0) - COALESCE(o.cash_out, 0), 2) AS net_cash_flow
+FROM cash_in i
+FULL OUTER JOIN cash_out o USING (period_start);
