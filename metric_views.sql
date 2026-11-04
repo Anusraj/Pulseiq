@@ -1045,3 +1045,112 @@ SELECT COALESCE(i.period_start, o.period_start) AS period_start,
        ROUND(COALESCE(i.cash_in, 0) - COALESCE(o.cash_out, 0), 2) AS net_cash_flow
 FROM cash_in i
 FULL OUTER JOIN cash_out o USING (period_start);
+
+CREATE OR REPLACE VIEW metrics.dashboard_department_impact AS
+WITH headcount AS (
+    SELECT month_start_date AS period_start, department_id,
+           headcount_end, hires, exits,
+           attrition_rate_monthly_pct AS attrition_rate
+    FROM warehouse.fact_headcount_monthly
+),
+payroll AS (
+    SELECT DATE_TRUNC('month', period_end_date)::DATE AS period_start, department_id,
+           COUNT(DISTINCT employee_id)::BIGINT AS employees_paid,
+           ROUND(SUM(employer_cost), 2) AS employer_cost,
+           ROUND(SUM(gross_pay), 2) AS gross_pay,
+           ROUND(SUM(overtime_pay), 2) AS overtime_pay,
+           ROUND(SUM(overtime_hours_paid), 2) AS overtime_hours,
+           ROUND(SUM(employer_cost) / NULLIF(COUNT(DISTINCT employee_id), 0), 2)
+               AS cost_per_head,
+           ROUND(100.0 * SUM(overtime_pay) / NULLIF(SUM(employer_cost), 0), 2)
+               AS overtime_share_pct
+    FROM metrics.payroll_eligible
+    GROUP BY 1, 2
+),
+attendance AS (
+    SELECT DATE_TRUNC('month', period_end_date)::DATE AS period_start, department_id,
+           COUNT(DISTINCT employee_id)::BIGINT AS attendance_employees,
+           ROUND(SUM(present_days) + 0.5 * SUM(half_days_unpaid), 2)
+               AS attendance_days,
+           ROUND(SUM(scheduled_days), 2) AS scheduled_days,
+           ROUND(SUM(overtime_hours), 2) AS attendance_overtime_hours,
+           ROUND(SUM(late_arrivals), 2) AS late_arrivals,
+           ROUND(
+               100.0 * (SUM(present_days) + 0.5 * SUM(half_days_unpaid))
+               / NULLIF(SUM(scheduled_days), 0), 2
+           ) AS attendance_rate_pct
+    FROM warehouse.fact_attendance_monthly
+    GROUP BY 1, 2
+),
+leave AS (
+    SELECT DATE_TRUNC('month', l.start_date)::DATE AS period_start,
+           e.department_id,
+           ROUND(SUM(l.days), 2) AS approved_leave_days
+    FROM warehouse.fact_leave l
+    JOIN warehouse.dim_employee e ON e.employee_key = l.employee_key
+    WHERE LOWER(TRIM(l.status)) = 'approved'
+      AND e.employee_key <> 0
+    GROUP BY 1, 2
+)
+SELECT h.period_start, h.department_id, d.department_name,
+       h.headcount_end, h.hires, h.exits, ROUND(h.attrition_rate, 2) AS attrition_rate,
+       p.employees_paid, p.employer_cost, p.gross_pay, p.overtime_pay,
+       p.overtime_hours, p.cost_per_head, p.overtime_share_pct,
+       a.attendance_employees, a.attendance_days, a.scheduled_days,
+       a.attendance_overtime_hours, a.late_arrivals, a.attendance_rate_pct,
+       COALESCE(l.approved_leave_days, 0)::DOUBLE AS approved_leave_days,
+       ROUND(COALESCE(l.approved_leave_days, 0) / NULLIF(h.headcount_end, 0), 2)
+           AS approved_leave_days_per_head,
+       ROUND(p.overtime_pay / NULLIF(p.employees_paid, 0), 2) AS overtime_cost_per_paid_head
+FROM headcount h
+JOIN warehouse.dim_department d ON d.department_id = h.department_id
+LEFT JOIN payroll p
+  ON p.period_start = h.period_start AND p.department_id = h.department_id
+LEFT JOIN attendance a
+  ON a.period_start = h.period_start AND a.department_id = h.department_id
+LEFT JOIN leave l
+  ON l.period_start = h.period_start AND l.department_id = h.department_id;
+
+CREATE OR REPLACE VIEW metrics.dashboard_department_impact_reconciliation AS
+SELECT v.period_start, v.department_id, v.department_name,
+       v.employer_cost, TRY_CAST(REPLACE(r.employer_cost, ',', '') AS DOUBLE)
+           AS reference_employer_cost,
+       ROUND(v.employer_cost - TRY_CAST(REPLACE(r.employer_cost, ',', '') AS DOUBLE), 2)
+           AS employer_cost_difference,
+       v.gross_pay, TRY_CAST(REPLACE(r.gross_pay, ',', '') AS DOUBLE)
+           AS reference_gross_pay,
+       ROUND(v.gross_pay - TRY_CAST(REPLACE(r.gross_pay, ',', '') AS DOUBLE), 2)
+           AS gross_pay_difference,
+       v.overtime_pay, TRY_CAST(REPLACE(r.overtime_pay, ',', '') AS DOUBLE)
+           AS reference_overtime_pay,
+       ROUND(v.overtime_pay - TRY_CAST(REPLACE(r.overtime_pay, ',', '') AS DOUBLE), 2)
+           AS overtime_pay_difference,
+       v.employees_paid, TRY_CAST(r.employees_paid AS BIGINT) AS reference_employees_paid,
+       v.overtime_hours, TRY_CAST(r.overtime_hours AS DOUBLE) AS reference_overtime_hours,
+       v.attendance_rate_pct,
+       100.0 * TRY_CAST(r.attendance_rate AS DOUBLE) AS reference_attendance_rate_pct,
+       ROUND(v.attendance_rate_pct - 100.0 * TRY_CAST(r.attendance_rate AS DOUBLE), 2)
+           AS attendance_rate_difference,
+       v.headcount_end, TRY_CAST(r.headcount_end AS BIGINT) AS reference_headcount_end,
+       v.hires, TRY_CAST(r.hires AS BIGINT) AS reference_hires,
+       v.exits, TRY_CAST(r.exits AS BIGINT) AS reference_exits,
+       v.attrition_rate,
+       TRY_CAST(REPLACE(r.attrition_rate_monthly_pct, ',', '') AS DOUBLE)
+           AS reference_attrition_rate,
+       ROUND(v.attrition_rate -
+             TRY_CAST(REPLACE(r.attrition_rate_monthly_pct, ',', '') AS DOUBLE), 2)
+           AS attrition_rate_difference,
+       v.cost_per_head,
+       TRY_CAST(REPLACE(r.cost_per_head, ',', '') AS DOUBLE) AS reference_cost_per_head,
+       ROUND(v.cost_per_head -
+             TRY_CAST(REPLACE(r.cost_per_head, ',', '') AS DOUBLE), 2)
+           AS cost_per_head_difference,
+       v.overtime_share_pct,
+       TRY_CAST(r.overtime_share_pct AS DOUBLE) AS reference_overtime_share_pct,
+       ROUND(v.overtime_share_pct -
+             TRY_CAST(r.overtime_share_pct AS DOUBLE), 2)
+           AS overtime_share_difference
+FROM metrics.dashboard_department_impact v
+JOIN raw.reference_summary_dept_month r
+  ON r.department_id = v.department_id
+ AND TRY_CAST(r.month AS DATE) = v.period_start;
