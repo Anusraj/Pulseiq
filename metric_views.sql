@@ -1154,3 +1154,73 @@ FROM metrics.dashboard_department_impact v
 JOIN raw.reference_summary_dept_month r
   ON r.department_id = v.department_id
  AND TRY_CAST(r.month AS DATE) = v.period_start;
+
+CREATE OR REPLACE VIEW metrics.dashboard_ai_anomaly_summary AS
+SELECT reason_code,
+       COUNT(*)::BIGINT AS anomaly_count,
+       ROUND(SUM(COALESCE(money_at_risk, 0)), 2) AS money_at_risk,
+       ROUND(AVG(anomaly_score), 3) AS average_anomaly_score,
+       MAX(period)::DATE AS latest_period,
+       MIN(reason_text) AS example_reason
+FROM warehouse.fact_anomaly
+WHERE UPPER(flagged) = 'Y'
+GROUP BY reason_code;
+
+CREATE OR REPLACE VIEW metrics.dashboard_ai_forecast AS
+WITH actuals AS (
+    SELECT month_start_date AS period_start,
+           department_id,
+           headcount_end::DOUBLE AS actual
+    FROM warehouse.fact_headcount_monthly
+),
+company_actuals AS (
+    SELECT period_start, SUM(actual) AS actual
+    FROM actuals
+    GROUP BY 1
+)
+SELECT f.forecast_id, f.forecast_month AS period_start, f.metric,
+       f.department_id, f.forecast_value, f.lower_80, f.upper_80,
+       f.method, f.trained_through, f.model_version,
+       CASE WHEN f.department_id = 'ALL' THEN ca.actual ELSE a.actual END AS actual,
+       CASE
+           WHEN CASE WHEN f.department_id = 'ALL' THEN ca.actual ELSE a.actual END IS NULL
+               THEN 'AWAITING_ACTUAL'
+           ELSE 'ACTUAL_KNOWN'
+       END AS actual_status,
+       CASE
+           WHEN CASE WHEN f.department_id = 'ALL' THEN ca.actual ELSE a.actual END IS NULL
+               THEN NULL
+           ELSE ABS(
+               f.forecast_value
+               - CASE WHEN f.department_id = 'ALL' THEN ca.actual ELSE a.actual END
+           )
+       END AS absolute_error,
+       CASE
+           WHEN CASE WHEN f.department_id = 'ALL' THEN ca.actual ELSE a.actual END IS NULL
+               THEN NULL
+           ELSE ROUND(
+               100.0 * ABS(
+                   f.forecast_value
+                   - CASE WHEN f.department_id = 'ALL' THEN ca.actual ELSE a.actual END
+               ) / NULLIF(
+                   CASE WHEN f.department_id = 'ALL' THEN ca.actual ELSE a.actual END,
+                   0
+               ),
+               2
+           )
+       END AS error_pct
+FROM warehouse.fact_forecast f
+LEFT JOIN actuals a
+  ON a.department_id = f.department_id
+ AND a.period_start = f.forecast_month
+LEFT JOIN company_actuals ca
+  ON ca.period_start = f.forecast_month
+WHERE LOWER(f.metric) = 'headcount_end';
+
+CREATE OR REPLACE VIEW metrics.dashboard_ai_attrition_risk_summary AS
+SELECT as_of_date,
+       risk_band,
+       COUNT(*)::BIGINT AS employee_count,
+       ROUND(AVG(risk_score_12m) * 100, 2) AS average_risk_pct
+FROM warehouse.fact_attrition_risk
+GROUP BY as_of_date, risk_band;
