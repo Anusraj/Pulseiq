@@ -863,6 +863,89 @@ SELECT period_start, department_id, department_name, kpi_name,
        END::VARCHAR AS traffic_light
 FROM target_actual;
 
+CREATE OR REPLACE VIEW metrics.dashboard_executive_scorecard AS
+WITH actuals AS (
+    SELECT DATE_TRUNC('month', period_start)::DATE AS period_start,
+           'M01'::VARCHAR AS kpi_id, 'Headcount'::VARCHAR AS kpi_name,
+           SUM(metric_value) AS metric_value, 'count'::VARCHAR AS unit,
+           'CONTEXT'::VARCHAR AS good_direction,
+           'metrics.m01_headcount'::VARCHAR AS source_view,
+           'pages/1_Workforce.py'::VARCHAR AS detail_page
+    FROM metrics.m01_headcount
+    GROUP BY 1
+    UNION ALL
+    SELECT DATE_TRUNC('month', period_start)::DATE, 'M04', 'Monthly attrition',
+           100.0 * SUM(numerator) / NULLIF(SUM(denominator), 0),
+           '%', 'LOWER', 'metrics.m04_attrition_rate_monthly',
+           'pages/3_Attrition.py'
+    FROM metrics.m04_attrition_rate_monthly
+    GROUP BY 1
+    UNION ALL
+    SELECT DATE_TRUNC('month', period_start)::DATE, 'M11', 'Overtime share',
+           100.0 * SUM(numerator) / NULLIF(SUM(denominator), 0),
+           '%', 'LOWER', 'metrics.m11_overtime_share',
+           'pages/5_Payroll_Cost.py'
+    FROM metrics.m11_overtime_share
+    GROUP BY 1
+    UNION ALL
+    SELECT DATE_TRUNC('month', period_start)::DATE, 'M13', 'Attendance rate',
+           100.0 * SUM(numerator) / NULLIF(SUM(denominator), 0),
+           '%', 'HIGHER', 'metrics.m13_attendance_rate',
+           'pages/2_Attendance.py'
+    FROM metrics.m13_attendance_rate
+    GROUP BY 1
+    UNION ALL
+    SELECT DATE_TRUNC('month', period_start)::DATE, 'M16', 'Revenue', SUM(metric_value),
+           'INR', 'HIGHER', 'metrics.m16_revenue',
+           'pages/7_Profit_Loss.py'
+    FROM metrics.m16_revenue
+    GROUP BY 1
+    UNION ALL
+    SELECT DATE_TRUNC('month', period_start)::DATE, 'M17', 'Net profit', SUM(metric_value),
+           'INR', 'HIGHER', 'metrics.m17_net_profit',
+           'pages/7_Profit_Loss.py'
+    FROM metrics.m17_net_profit
+    GROUP BY 1
+    UNION ALL
+    SELECT DATE_TRUNC('month', period_start)::DATE, 'M18', 'Operating margin', metric_value,
+           '%', 'HIGHER', 'metrics.m18_operating_margin',
+           'pages/7_Profit_Loss.py'
+    FROM metrics.m18_operating_margin
+    UNION ALL
+    SELECT DATE_TRUNC('month', period_start)::DATE, 'M29', 'Net hiring', SUM(metric_value),
+           'count', 'CONTEXT', 'metrics.m29_net_hiring',
+           'pages/1_Workforce.py'
+    FROM metrics.m29_net_hiring
+    GROUP BY 1
+),
+targets AS (
+    SELECT period_start, kpi_name,
+           AVG(target_value) FILTER (WHERE target_value IS NOT NULL) AS target_value,
+           MAX(good_direction) AS target_direction
+    FROM metrics.dashboard_kpi_target_status
+    WHERE kpi_name IN ('Monthly attrition', 'Overtime share', 'Attendance rate')
+    GROUP BY 1, 2
+)
+SELECT actual.period_start, actual.kpi_id, actual.kpi_name,
+       ROUND(actual.metric_value, 2) AS metric_value,
+       ROUND(target.target_value, 2) AS target_value,
+       actual.unit,
+       COALESCE(target.target_direction, actual.good_direction) AS good_direction,
+       CASE
+           WHEN target.target_value IS NULL THEN 'NO_TARGET'
+           WHEN (COALESCE(target.target_direction, actual.good_direction) = 'HIGHER'
+                 AND actual.metric_value >= target.target_value)
+             OR (COALESCE(target.target_direction, actual.good_direction) = 'LOWER'
+                 AND actual.metric_value <= target.target_value)
+               THEN 'GREEN'
+           ELSE 'RED'
+       END::VARCHAR AS traffic_light,
+       actual.source_view, actual.detail_page
+FROM actuals actual
+LEFT JOIN targets target
+  ON target.period_start = actual.period_start
+ AND target.kpi_name = actual.kpi_name;
+
 CREATE OR REPLACE VIEW metrics.dashboard_pnl_monthly AS
 WITH monthly AS (
     SELECT CAST(l.posting_period || '-01' AS DATE) AS period_start,

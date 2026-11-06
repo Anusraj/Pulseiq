@@ -17,6 +17,7 @@ The app is not publicly deployed. Run it locally with the steps below. Dashboard
 - Receivables and cash page with ageing buckets, client payment behaviour, overdue clients, and cash flow.
 - Cross-department impact page joining headcount, payroll, attendance, leave and attrition at department-month grain.
 - AI signals page ranking anomaly money at risk, showing forecast confidence bands and known-month error.
+- Executive company-health scorecard with eight governed KPIs, target status, month selector, and print styling.
 - Insight-led chart headlines and compact, three-color visual semantics.
 
 ## Tech stack
