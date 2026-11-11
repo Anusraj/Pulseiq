@@ -9,6 +9,14 @@ and the initial workforce dashboard.
   metric governance, and the first dashboard.
 - Phase tag: `phase-1` (`6c35f92`).
 
+## Tasks
+
+- [Task 1](task-1/README.md)
+- [Task 2](task-2/README.md)
+- [Task 3](task-3/README.md)
+- [Task 4](task-4/README.md)
+- [Task 5](task-5/README.md)
+
 ## Evidence
 
 - [Data-quality gate](../docs/dq-gate.md)

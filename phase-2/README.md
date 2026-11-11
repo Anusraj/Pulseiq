@@ -9,6 +9,14 @@ productivity, payroll reconciliation, and KPI target tracking.
   reconciliation, and budget/KPI targets.
 - Phase tag: `phase-2` (`50ba360`).
 
+## Tasks
+
+- [Task 6](task-6/README.md)
+- [Task 7](task-7/README.md)
+- [Task 8](task-8/README.md)
+- [Task 9](task-9/README.md)
+- [Task 10](task-10/README.md)
+
 ## Evidence
 
 - [Task 6 evidence](../docs/task6-evidence.md)

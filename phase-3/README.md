@@ -9,6 +9,14 @@ AI-assisted signals, and the executive company-health scorecard.
   and the executive scorecard.
 - Phase tag: `phase-3` (`2ce0f35`).
 
+## Tasks
+
+- [Task 11](task-11/README.md)
+- [Task 12](task-12/README.md)
+- [Task 13](task-13/README.md)
+- [Task 14](task-14/README.md)
+- [Task 15](task-15/README.md)
+
 ## Evidence
 
 - [Task 11 evidence](../docs/task11-evidence.md)
