@@ -108,10 +108,11 @@ def table(data: list[list[str]], widths: list[float], header: bool = True) -> Ta
 
 
 class BarChart(Flowable):
-    def __init__(self, labels: list[str], values: list[float], title: str, width=125 * mm, height=48 * mm):
+    def __init__(self, labels: list[str], values: list[float], title: str, width=250 * mm):
         super().__init__()
         self.labels, self.values, self.title = labels, values, title
-        self.width, self.height = width, height
+        self.width = width
+        self.height = max(48 * mm, min(118 * mm, (18 + len(values) * 3) * mm))
 
     def draw(self) -> None:
         canvas = self.canv
@@ -122,19 +123,23 @@ class BarChart(Flowable):
             canvas.setFont("Helvetica", 8)
             canvas.drawString(0, self.height / 2, "No chart data for this month")
             return
-        chart_top = self.height - 17
-        chart_height = self.height - 28
-        bar_width = self.width / max(len(self.values), 1) * 0.65
-        gap = self.width / max(len(self.values), 1)
+        label_width = 48 * mm
+        chart_width = self.width - label_width
+        chart_height = self.height - 18 * mm
+        row_height = chart_height / max(len(self.values), 1)
         maximum = max(self.values)
         for index, value in enumerate(self.values):
-            height = chart_height * value / maximum
-            x = index * gap + (gap - bar_width) / 2
-            canvas.setFillColor(BLUE)
-            canvas.rect(x, 12, bar_width, height, fill=1, stroke=0)
+            y = self.height - 18 * mm - (index + 1) * row_height + row_height * 0.18
+            bar_height = row_height * 0.64
+            bar_width = chart_width * value / maximum
+            label = self.labels[index]
+            if len(label) > 24:
+                label = label[:21] + "..."
             canvas.setFillColor(INK)
-            canvas.setFont("Helvetica", 6)
-            canvas.drawCentredString(x + bar_width / 2, 4, self.labels[index][:14])
+            canvas.setFont("Helvetica", 5.5)
+            canvas.drawRightString(label_width - 3 * mm, y + bar_height * 0.15, label)
+            canvas.setFillColor(BLUE)
+            canvas.rect(label_width, y, bar_width, bar_height, fill=1, stroke=0)
 
 
 def generate_report(database: Path, month: date, output: Path, generated_at: datetime | None = None) -> Path:
