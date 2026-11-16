@@ -92,6 +92,14 @@ The app is not publicly deployed. Run it locally with the steps below. Dashboard
    python -m streamlit run app.py
    ```
 
+   If Windows Application Control reports that `pyarrow.lib` is blocked,
+   reinstall the pinned native wheel in the project environment:
+
+   ```powershell
+   .\.venv\Scripts\python.exe -m pip install --force-reinstall --no-cache-dir pyarrow==17.0.0
+   .\.venv\Scripts\python.exe -c "import pyarrow; print(pyarrow.__version__)"
+   ```
+
 The ETL gate exits nonzero when a critical data-quality check fails. See [the DQ guide](docs/dq-gate.md), [the warehouse guide](docs/warehouse.md), and [the metric-layer guide](docs/task4-metric-layer.md) for pipeline details.
 
 ## Architecture

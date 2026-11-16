@@ -24,6 +24,11 @@ layer, and run the one-command report builder. GitHub Actions runs
 `.github/workflows/monthly-report.yml` at 06:00 UTC on the first day of each
 month for the previous month. It also supports a manually supplied `YYYY-MM`.
 
+PyArrow is explicitly pinned to `17.0.0` because Streamlit's dataframe
+renderer loads its native `pyarrow.lib` extension. This version was imported
+successfully in the project environment after Windows Application Control
+blocked the unpinned newer wheel. It also supports a manually supplied `YYYY-MM`.
+
 ## Validation and clean-machine evidence
 
 - `python -m unittest discover -s tests -p "test_*.py" -v`: passed.
