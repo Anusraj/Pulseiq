@@ -2,8 +2,8 @@
 
 ## Monthly pack
 
-`python build_report.py --month 2026-09` creates
-`reports/pulseiq-2026-09.pdf` with five report surfaces:
+`python phase4/task-16/build_report.py --month 2026-09` creates
+`phase4/task-16/reports/pulseiq-2026-09.pdf` with five report surfaces:
 
 1. Executive KPI scorecard.
 2. P&L summary.
@@ -19,7 +19,7 @@ list.
 ## Scheduling and setup
 
 Dependencies are pinned in `requirements.txt`. A clean machine can follow the
-PowerShell setup in [README.md](../README.md), rebuild the ETL/warehouse/metric
+PowerShell setup in [README.md](../../README.md), rebuild the ETL/warehouse/metric
 layer, and run the one-command report builder. GitHub Actions runs
 `.github/workflows/monthly-report.yml` at 06:00 UTC on the first day of each
 month for the previous month. It also supports a manually supplied `YYYY-MM`.
@@ -27,12 +27,12 @@ month for the previous month. It also supports a manually supplied `YYYY-MM`.
 PyArrow is explicitly pinned to `17.0.0` because Streamlit's dataframe
 renderer loads its native `pyarrow.lib` extension. This version was imported
 successfully in the project environment after Windows Application Control
-blocked the unpinned newer wheel. It also supports a manually supplied `YYYY-MM`.
+blocked the unpinned newer wheel.
 
 ## Validation and clean-machine evidence
 
-- `python -m unittest discover -s tests -p "test_*.py" -v`: passed.
-- `python build_report.py --month 2026-09`: passed and produced the sample PDF.
+- `python -m unittest discover -s phase4/task-16/tests -p "test_*.py" -v`: passed.
+- `python phase4/task-16/build_report.py --month 2026-09`: passed and produced the sample PDF.
 - The report test uses a fresh temporary DuckDB containing a new
   **New Department** and verifies that the PDF builds successfully. This
   demonstrates that a new department does not break the report or require a

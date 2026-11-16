@@ -1,9 +1,11 @@
 import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
+import sys
 
 import duckdb
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from build_report import generate_report, parse_month
 
 

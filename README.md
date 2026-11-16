@@ -49,7 +49,7 @@ The app is not publicly deployed. Run it locally with the steps below. Dashboard
 3. Install pinned dependencies:
 
    ```powershell
-   python -m pip install -r requirements.txt
+   python -m pip install -r phase4\task-16\requirements.txt
    ```
 
 4. Build the raw/validated ETL outputs, warehouse, and governed metric views:
@@ -59,27 +59,27 @@ The app is not publicly deployed. Run it locally with the steps below. Dashboard
    python metrics.py
    ```
 
-6. Build the monthly report pack. The command works for any closed month and
+5. Build the monthly report pack. The command works for any closed month and
    writes a stamped PDF containing five governed tables/charts:
 
    ```powershell
-   python build_report.py --month 2026-09
+   python phase4\task-16\build_report.py --month 2026-09
    ```
 
-   The output is `reports\pulseiq-2026-09.pdf`. Every pack shows its reporting
+   The output is `phase4\task-16\reports\pulseiq-2026-09.pdf`. Every pack shows its reporting
    date range, data cut-off, and generation timestamp. Use `--output` to choose
    another path or `--database` for another DuckDB file.
 
-7. Run the release checks:
+6. Run the release checks:
 
    ```powershell
-   python -m unittest discover -s tests -p "test_*.py" -v
+   python -m unittest discover -s phase4\task-16\tests -p "test_*.py" -v
    ```
 
    The report test creates a clean temporary DuckDB with a previously unseen
    department and verifies that the department appears without code changes.
 
-8. Start the app and open the local URL printed by Streamlit, usually `http://localhost:8501`:
+7. Start the app and open the local URL printed by Streamlit, usually `http://localhost:8501`:
 
    ```powershell
    streamlit run app.py
@@ -123,8 +123,9 @@ The dashboard queries metric views only. M01-M03 provide headcount, hires, and e
 - Six independently calculated examples pass in `metric_hand_checks.csv`, including M29: D01 / January 2020 has 1 hire and 2 exits, so net hires is `-1`.
 - `metric_view_validation.csv` records 0 below-threshold groups for every official view, including M29.
 - The dashboard data loader and Python compilation were checked; the live page rendered all five KPIs and four charts.
-- `python build_report.py --month 2026-09` creates the sample management pack at
-  `reports\pulseiq-2026-09.pdf`; it includes the date range and data cut-off.
+- `python phase4\task-16\build_report.py --month 2026-09` creates the sample
+  management pack at `phase4\task-16\reports\pulseiq-2026-09.pdf`; it includes
+  the date range and data cut-off.
 - The standard-library test suite passes, including the new-department fixture.
 - `.github\workflows\monthly-report.yml` runs on the first day of each month
   for the previous month and also supports manual `workflow_dispatch`.
@@ -137,7 +138,7 @@ The dashboard queries metric views only. M01-M03 provide headcount, hires, and e
 - M29 excludes transfers and sums reportable department/month values, so suppressed groups are not represented in its dashboard total.
 - Next: connect a scheduled refresh, add deployment and access controls, and automate browser-level tests across desktop and mobile layouts.
 
-Further evidence and definitions: [Task 2 warehouse](docs/task2-evidence.md), [Task 4 metric layer](docs/task4-metric-layer.md), [Task 5 dashboard](docs/task5-evidence.md), [Task 11 P&L](docs/task11-evidence.md), [Task 12 receivables and cash](docs/task12-evidence.md), [Task 13 department impact](docs/task13-evidence.md), [Task 14 AI signals](docs/task14-evidence.md), and [Task 16 release evidence](docs/task16-evidence.md).
+Further evidence and definitions: [Task 2 warehouse](docs/task2-evidence.md), [Task 4 metric layer](docs/task4-metric-layer.md), [Task 5 dashboard](docs/task5-evidence.md), [Task 11 P&L](docs/task11-evidence.md), [Task 12 receivables and cash](docs/task12-evidence.md), [Task 13 department impact](docs/task13-evidence.md), [Task 14 AI signals](docs/task14-evidence.md), and [Task 16 release evidence](phase4/task-16/task16-evidence.md).
 
 ## What I learned and problems solved (Tasks 1–5)
 

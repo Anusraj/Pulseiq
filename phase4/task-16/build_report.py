@@ -1,7 +1,7 @@
 """Build a stamped monthly PulseIQ report pack.
 
 Example:
-    python build_report.py --month 2026-09 --output reports/pulseiq-2026-09.pdf
+    python phase4/task-16/build_report.py --month 2026-09
 """
 
 from __future__ import annotations
@@ -31,9 +31,10 @@ from reportlab.platypus import (
 )
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
+TASK_ROOT = Path(__file__).resolve().parent
 DEFAULT_DATABASE = ROOT / "pulseiq.duckdb"
-DEFAULT_OUTPUT = ROOT / "reports" / "pulseiq-monthly-report.pdf"
+DEFAULT_OUTPUT = TASK_ROOT / "reports" / "pulseiq-monthly-report.pdf"
 PAGE = landscape(A4)
 INK = colors.HexColor("#1F2937")
 BLUE = colors.HexColor("#2563EB")
@@ -278,7 +279,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
     month, _ = args.month
-    output = args.output or ROOT / "reports" / f"pulseiq-{month:%Y-%m}.pdf"
+    output = args.output or TASK_ROOT / "reports" / f"pulseiq-{month:%Y-%m}.pdf"
     try:
         path = generate_report(args.database, month, output)
     except (duckdb.Error, OSError, ValueError) as exc:
