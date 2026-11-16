@@ -7,6 +7,9 @@ This folder contains the complete Task 16 bundle:
 - `tests/` — clean-machine and new-department regression test.
 - `reports/` — sample monthly report.
 - `task16-evidence.md` — completion evidence and release notes.
+- The scheduled workflow is kept at
+  `../../.github/workflows/monthly-report.yml` because GitHub only discovers
+  scheduled workflows from `.github/workflows`.
 
 From the repository root:
 
