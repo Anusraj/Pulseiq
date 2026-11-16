@@ -33,6 +33,9 @@ blocked the unpinned newer wheel.
 
 - `python -m unittest discover -s phase4/task-16/tests -p "test_*.py" -v`: passed.
 - `python phase4/task-16/build_report.py --month 2026-09`: passed and produced the sample PDF.
+- The team productivity section uses month-overlap logic, so September sprints
+  ending on 18 September are included; the regenerated sample contains 32 team
+  productivity rows and a populated completion-rate chart.
 - The report test uses a fresh temporary DuckDB containing a new
   **New Department** and verifies that the PDF builds successfully. This
   demonstrates that a new department does not break the report or require a

@@ -182,8 +182,8 @@ def generate_report(database: Path, month: date, output: Path, generated_at: dat
                FROM metrics.dashboard_team_sprint_productivity
                WHERE period_start <= ? AND sprint_end >= ?
                ORDER BY team_name""",
-            month,
             end,
+            month,
         )
     finally:
         connection.close()
