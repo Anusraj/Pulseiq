@@ -83,7 +83,8 @@ def render_dashboard() -> None:
         <style>
         :root { --ink: #172B4D; --muted: #667085; --teal: #087E8B; --amber: #D98E32; --paper: #F4F7FB; --line: #E4EAF1; }
         .stApp { background: var(--paper); color: var(--ink); }
-        [data-testid="stHeader"] { display: none; }
+        [data-testid="stHeader"] { background: transparent; }
+        [data-testid="stToolbar"] { display: none; }
         [data-testid="stSidebar"] { background: #FFFFFF; border-right: 1px solid var(--line); }
         [data-testid="stSidebar"] > div { padding-top: 1.5rem; }
         .block-container { max-width: 1500px; padding: 2rem 2.4rem 3rem; }
