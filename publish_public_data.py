@@ -51,7 +51,7 @@ def publish() -> None:
         target.execute(
             """
             CREATE TABLE warehouse.dim_team AS
-            SELECT team_id, team_name, active_members, planning_cadence
+            SELECT team_id, team_name, department_id, active_members, planning_cadence
             FROM source.warehouse.dim_team
             """
         )

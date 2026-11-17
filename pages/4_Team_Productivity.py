@@ -28,8 +28,11 @@ def load_productivity_data(database_path: str) -> tuple[pd.DataFrame, ...]:
             ORDER BY period_start, team_id
         """).fetchdf()
         teams = connection.execute("""
-            SELECT team_id, team_name, active_members, planning_cadence
-            FROM warehouse.dim_team
+            SELECT t.team_id, t.team_name, t.department_id, d.department_name,
+                   t.active_members, t.planning_cadence
+            FROM warehouse.dim_team t
+            LEFT JOIN metrics.dashboard_department_lookup d
+              ON d.department_id = t.department_id
             ORDER BY team_name
         """).fetchdf()
         metric_rules = connection.execute("""
@@ -101,8 +104,26 @@ def render_productivity_page() -> None:
         for row in sprints.itertuples(index=False)
     }
     all_teams = "All teams"
+    all_departments = "All departments"
     team_ids = teams["team_id"].tolist()
     team_labels = teams.set_index("team_id")["team_name"].to_dict()
+    department_labels = (
+        teams[["department_id", "department_name"]]
+        .dropna()
+        .drop_duplicates()
+        .sort_values("department_name")
+        .set_index("department_id")["department_name"]
+        .to_dict()
+    )
+    selected_department = st.sidebar.selectbox(
+        "Department",
+        [all_departments, *department_labels.keys()],
+        format_func=lambda value: (
+            all_departments if value == all_departments else
+            f"{department_labels[value]} · {value}"
+        ),
+        key="productivity_department",
+    )
     selected_sprint = st.sidebar.selectbox(
         "Sprint",
         sprints["sprint_id"].tolist(),
@@ -119,6 +140,14 @@ def render_productivity_page() -> None:
     selected_sprint_data = productivity.loc[
         productivity["sprint_id"] == selected_sprint
     ].copy()
+    selected_team_ids = teams["team_id"]
+    if selected_department != all_departments:
+        selected_team_ids = teams.loc[
+            teams["department_id"] == selected_department, "team_id"
+        ]
+    selected_sprint_data = selected_sprint_data.loc[
+        selected_sprint_data["team_id"].isin(selected_team_ids)
+    ]
     displayed = selected_sprint_data
     if selected_team != all_teams:
         displayed = displayed.loc[displayed["team_id"] == selected_team]
