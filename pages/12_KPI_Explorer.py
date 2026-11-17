@@ -142,7 +142,6 @@ def render_explorer() -> None:
         :root { --ink: #172B4D; --muted: #667085; --teal: #087E8B; --paper: #F4F7FB; --line: #E4EAF1; }
         .stApp { background: var(--paper); color: var(--ink); }
         [data-testid="stHeader"] { background: transparent; }
-        [data-testid="stBaseButton-header"], [data-testid="stMainMenuButton"] { display: none; }
         [data-testid="stSidebar"] { background: #FFFFFF; border-right: 1px solid var(--line); }
         .block-container { max-width: 1500px; padding: 2rem 2.4rem 3rem; }
         h1, h2, h3 { color: var(--ink); font-family: Inter, 'Segoe UI', sans-serif !important; }
