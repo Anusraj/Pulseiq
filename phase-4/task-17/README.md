@@ -1,52 +1,57 @@
 # Task 17: Production release
 
-PulseIQ is deployed as a public Streamlit Community Cloud app from the
-`Anusraj/Pulseiq` GitHub repository. The app reads
-`data/pulseiq_public.duckdb`, a 17.6 MB snapshot containing only governed
-aggregate metric outputs and release metadata. Raw feeds, warehouse tables,
-employee-level tables, and `payroll_eligible` are not published.
+## Live dashboard
 
-## Hosting decision
+**Public link:** https://pulseiq-v9ipnnyywrctkvvzmvynam.streamlit.app/
+
+The app is deployed from `Anusraj/Pulseiq`, branch `main`, using Streamlit
+Community Cloud. It has a landing page, navigation, department/date filters,
+team productivity filters, a visible data cut-off, and the Workforce
+period-end headcount KPI.
+
+## Hosting choice
 
 | Platform | Free limits / data size | Sleeping behaviour | Price |
 |---|---|---|---|
-| Streamlit Community Cloud | Public apps; repository files must remain within the platform's practical resource limits; this snapshot is 17.6 MB and below the 200 MB release budget | Apps can sleep after inactivity and cold-start on the next visit | Free |
-| Render | Free web services have limited monthly hours and ephemeral local storage | Spins down after inactivity on the free tier | Free; paid services from a small monthly fee |
-| Hugging Face Spaces | Public CPU Spaces have limited hardware/storage and may restart | Spaces can pause when unused | Free; paid hardware available |
+| Streamlit Community Cloud | Public GitHub apps; this 17.8 MB snapshot is below the 200 MB release budget | May sleep after inactivity and cold-start on the next visit | Free |
+| Render | Free web services have limited monthly hours and ephemeral local storage | Spins down after inactivity on the free tier | Free; paid from a small monthly fee |
+| Hugging Face Spaces | Public CPU Spaces have limited hardware/storage | May pause when unused | Free; paid hardware available |
 
-Streamlit Community Cloud is the first choice because the product is already a
-Streamlit app, deployment is directly connected to GitHub, and the published
-aggregate file is comfortably below the 200 MB budget. Sleeping is acceptable
-for this learning release; a paid always-on plan would be the normal business
-choice if a cold start harmed operational users.
+Streamlit Community Cloud was chosen because the dashboard is already a
+Streamlit app and deploys directly from GitHub. Sleeping is acceptable for
+this learning release; a paid always-on plan would be normal if a cold start
+hurt operational users.
 
-## Data, secrets, and refresh
+## Published data and refresh
 
-- The public file is rebuilt with `python publish_public_data.py`.
-- `.github/workflows/monthly-report.yml` runs at **06:00 UTC on the first day
-  of every month**, rebuilds ETL, warehouse, and metric outputs, and commits
-  the refreshed aggregate file when it changes.
-- The dashboard displays the release metadata cut-off (`September 1, 2026`
-  for the current snapshot).
-- No secrets are required by the app. If a hosted database is added later,
-  credentials belong in Streamlit Cloud Secrets, not Git or this file.
+`data/pulseiq_public.duckdb` is 17.8 MB and contains only materialized,
+governed metric aggregates, the non-sensitive team and department lookup
+needed by the productivity page, and release metadata. Raw feeds,
+employee-level tables, and `payroll_eligible` are excluded. The current
+cut-off is **1 September 2026**, shown on the Workforce landing page.
 
-## Stranger test and checklist
+`.github/workflows/monthly-report.yml` runs at **06:00 UTC on the first day of
+each month**, rebuilds ETL, warehouse, metric views, the report, and the
+public snapshot, then commits the snapshot if it changed.
 
-- [ ] Live link opens on a phone and for a stranger: paste the deployed
-  Streamlit URL here after the Cloud deploy is created.
-- [x] Data cut-off is visible below the reporting-period filter.
-- [x] No secrets are in the repository; the app uses only committed aggregate
-  data.
-- [x] Hosting choice and reason are documented above.
-- [x] Landing page, sidebar navigation, department/date filters, and
-  period-end headcount KPI are available. A stranger can open **Workforce**
-  and read the first KPI without setup.
-- [x] The published database is 17.6 MB, well below the 200 MB limit.
+No secrets are required by the app. Future database credentials belong in
+Streamlit Cloud Secrets, never in the repository.
 
-## Evidence
+## Completion checklist
 
-- Current release candidate report: [Task 16 evidence](../task-16/task16-evidence.md).
-- Public data snapshot: `data/pulseiq_public.duckdb`.
-- Phone screenshot: capture the deployed URL after the first Streamlit Cloud
-  deployment and attach it to this report.
+- [x] Live link opens in a browser and the app navigation loads.
+- [x] Live link verified on the public deployment.
+- [x] Data cut-off date is shown.
+- [x] No secrets are in the repository.
+- [x] Hosting choice and reason are documented.
+- [x] Published data is below 200 MB.
+- [x] Landing page, navigation, filters, and headcount KPI are available.
+- [x] Department filter is visible on Workforce and Team Productivity.
+- [x] A stranger can open Workforce and read period-end headcount without setup.
+
+## Phone evidence
+
+The live Workforce landing page was verified at a 390 x 844 viewport. It
+shows responsive KPI cards, the reporting period, and the published cut-off
+without horizontal overflow. The screenshot supplied with the task is the
+phone evidence for this release.
