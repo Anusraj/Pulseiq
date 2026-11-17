@@ -9,6 +9,11 @@ shown in the page so they remain usable even when the navigation sidebar is
 collapsed. It reads only the published aggregate DuckDB snapshot; it never queries raw employee,
 payroll-detail, or salary-level tables.
 
+The complete Task 18 implementation is in
+`phase-4/task-18/kpi_explorer.py`. The file
+`pages/12_KPI_Explorer.py` is only the Streamlit entry-point wrapper required
+for multipage discovery.
+
 ## Allowed metrics and dimensions
 
 The explorer uses the governed metric catalog and exposes these metrics:
