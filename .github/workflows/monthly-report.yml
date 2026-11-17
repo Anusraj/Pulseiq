@@ -23,7 +23,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install pinned dependencies
-        run: python -m pip install -r phase-4/task-16/requirements.txt
+        run: python -m pip install -r phase4/task-16/requirements.txt
       - name: Choose reporting month
         id: month
         shell: bash
@@ -38,7 +38,7 @@ jobs:
           python etl.py
           python warehouse.py
           python metrics.py
-          python phase-4/task-16/build_report.py --month "${{ steps.month.outputs.month }}"
+          python phase4/task-16/build_report.py --month "${{ steps.month.outputs.month }}"
       - name: Publish governed aggregate snapshot
         run: python publish_public_data.py
       - name: Commit refreshed public snapshot
@@ -57,4 +57,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pulseiq-report-${{ steps.month.outputs.month }}
-          path: phase-4/task-16/reports/pulseiq-${{ steps.month.outputs.month }}.pdf
+          path: phase4/task-16/reports/pulseiq-${{ steps.month.outputs.month }}.pdf

@@ -7,7 +7,7 @@ PulseIQ is a workforce analytics project for **Zenith Nova Technologies, part of
 Deploy `app.py` from this repository with Streamlit Community Cloud. The
 release snapshot is `data/pulseiq_public.duckdb`; it contains governed
 aggregates only and is refreshed by `.github/workflows/monthly-report.yml`.
-See [Task 17 release evidence](phase-4/task-17/README.md) for the hosting
+See [Task 17 release evidence](phase4/task-17/README.md) for the hosting
 decision, 200 MB budget, refresh schedule, and stranger-test checklist.
 Dashboard evidence is available in [the summary screenshot](task5-workforce-dashboard.png)
 and [the department breakdown screenshot](task5-workforce-breakdowns.png).
