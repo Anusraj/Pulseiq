@@ -52,6 +52,7 @@ Python runtime, avoiding a source build.
 
 ## Phone evidence
 
-Open the public link on a phone and capture the Workforce landing page with
-the sidebar filters collapsed. The responsive CSS is included in
-`dashboard.py`; the phone screenshot is the remaining manual evidence item.
+The live Workforce landing page was verified at a 390 x 844 viewport with the
+sidebar collapsed. It shows the responsive KPI cards, reporting period, and
+published cut-off without horizontal overflow. The screenshot was captured
+from the public URL as release evidence.
