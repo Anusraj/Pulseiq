@@ -36,6 +36,9 @@ public snapshot, then commits the snapshot if it changed.
 No secrets are required by the app. Future database credentials belong in
 Streamlit Cloud Secrets, never in the repository.
 
+The hosted runtime is pinned to Python 3.11 in `runtime.txt` so the pinned
+PyArrow wheel installs without a source build.
+
 ## Completion checklist
 
 - [x] Live link opens in a browser and the app navigation loads.
