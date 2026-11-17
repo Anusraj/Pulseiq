@@ -24,9 +24,10 @@ hurt operational users.
 
 ## Published data and refresh
 
-`data/pulseiq_public.duckdb` is 17.6 MB and contains only materialized,
-governed metric aggregates and release metadata. Raw feeds, warehouse tables,
-employee-level tables, and `payroll_eligible` are excluded. The current
+`data/pulseiq_public.duckdb` is 17.8 MB and contains only materialized,
+governed metric aggregates, the non-sensitive team lookup needed by the
+productivity page, and release metadata. Raw feeds, employee-level tables,
+and `payroll_eligible` are excluded. The current
 cut-off is **1 September 2026**, shown on the Workforce landing page.
 
 `.github/workflows/monthly-report.yml` runs at **06:00 UTC on the first day of

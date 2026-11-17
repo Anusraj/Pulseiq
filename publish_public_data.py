@@ -26,6 +26,7 @@ def publish() -> None:
         source_path = str(SOURCE_DATABASE).replace("'", "''")
         target.execute(f"ATTACH '{source_path}' AS source (READ_ONLY)")
         target.execute("CREATE SCHEMA metrics")
+        target.execute("CREATE SCHEMA warehouse")
         metric_tables = [
             row[0]
             for row in target.execute(
@@ -47,6 +48,13 @@ def publish() -> None:
                 f'CREATE TABLE metrics."{table_name}" AS '
                 f'SELECT * FROM source.metrics."{table_name}"'
             )
+        target.execute(
+            """
+            CREATE TABLE warehouse.dim_team AS
+            SELECT team_id, team_name, active_members, planning_cadence
+            FROM source.warehouse.dim_team
+            """
+        )
 
         cutoff = target.execute(
             "SELECT MAX(period_start) FROM source.metrics.m01_headcount"
