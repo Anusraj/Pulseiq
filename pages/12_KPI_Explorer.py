@@ -164,7 +164,15 @@ def render_explorer() -> None:
         "manager.demo": "MANAGER",
         "exec.demo": "EXECUTIVE",
     }
-    username = st.sidebar.selectbox("Demo user", list(usernames), key="explorer_user")
+    st.markdown('<div class="hero-title">Self-service KPI explorer</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="hero-copy">Choose a governed metric and drill from company to '
+        'department or team without exposing small groups.</div>',
+        unsafe_allow_html=True,
+    )
+    st.subheader("Explorer controls")
+    control_columns = st.columns(3)
+    username = control_columns[0].selectbox("Demo user", list(usernames), key="explorer_user")
     role = usernames[username]
     rules = ROLE_RULES[role]
     allowed = _allowed_metrics(role, catalog)
@@ -172,22 +180,16 @@ def render_explorer() -> None:
         st.error(f"No governed metrics are configured for the {role} role.")
         return
 
-    st.sidebar.caption(f"Role: {role} · {rules['description']}")
-    metric_id = st.sidebar.selectbox(
+    metric_id = control_columns[1].selectbox(
         "Metric",
         allowed["metric_id"].tolist(),
         format_func=lambda value: f"{value} · {allowed.set_index('metric_id').loc[value, 'metric_name']}",
     )
-    dimension = st.sidebar.selectbox("Drill level", sorted(rules["dimensions"]))
+    dimension = control_columns[2].selectbox("Drill level", sorted(rules["dimensions"]))
     metric = allowed.loc[allowed["metric_id"] == metric_id].iloc[0]
     minimum_size = _minimum_group_size(metric["minimum_group_size"])
 
-    st.markdown('<div class="hero-title">Self-service KPI explorer</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="hero-copy">Choose a governed metric and drill from company to '
-        'department or team without exposing small groups.</div>',
-        unsafe_allow_html=True,
-    )
+    st.caption(f"Role: {role} · {rules['description']}")
     st.info(
         f"Demo role: {role}. Values are aggregate-only. Groups below {minimum_size} "
         "records are hidden; a manager team of 3 therefore receives no attrition "

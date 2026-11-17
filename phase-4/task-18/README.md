@@ -4,8 +4,9 @@
 
 **Public dashboard:** https://pulseiq-v9ipnnyywrctkvvzmvynam.streamlit.app/
 
-The new **KPI Explorer** page is available from the sidebar. It reads only
-the published aggregate DuckDB snapshot; it never queries raw employee,
+The new **KPI Explorer** page is available from the sidebar. Its controls are
+shown in the page so they remain usable even when the navigation sidebar is
+collapsed. It reads only the published aggregate DuckDB snapshot; it never queries raw employee,
 payroll-detail, or salary-level tables.
 
 ## Allowed metrics and dimensions
