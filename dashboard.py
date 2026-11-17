@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import duckdb
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-
-ROOT = Path(__file__).resolve().parent
-DATABASE = ROOT / "pulseiq.duckdb"
+from release_config import DATABASE
 INK = "#173D38"
 TEAL = "#2E8173"
 AMBER = "#C4813C"
@@ -163,6 +159,17 @@ def render_dashboard() -> None:
         return
     department_filter = selected_department != "All reportable departments"
     st.caption(f"Reporting period: {start_date:%B %Y} – {end_date:%B %Y}")
+    try:
+        metadata_connection = duckdb.connect(str(DATABASE), read_only=True)
+        try:
+            cutoff = metadata_connection.execute(
+                "SELECT value FROM release_metadata WHERE key = 'data_cutoff'"
+            ).fetchone()[0]
+        finally:
+            metadata_connection.close()
+        st.caption(f"Data cut-off: {pd.Timestamp(cutoff):%d %B %Y} · Published aggregate snapshot")
+    except duckdb.Error:
+        st.caption("Data cut-off: available through the latest selected month")
 
     def scope(frame: pd.DataFrame) -> pd.DataFrame:
         result = frame.loc[frame["period_start"].between(start_date, end_date)].copy()

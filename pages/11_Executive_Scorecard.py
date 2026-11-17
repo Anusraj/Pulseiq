@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import duckdb
 import pandas as pd
 import streamlit as st
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATABASE = ROOT / "pulseiq.duckdb"
+from release_config import DATABASE
 GREEN = "#24845A"
 AMBER = "#D98E32"
 RED = "#C2413B"

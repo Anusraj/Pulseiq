@@ -4,7 +4,13 @@ PulseIQ is a workforce analytics project for **Zenith Nova Technologies, part of
 
 ## Live demo
 
-The app is not publicly deployed. Run it locally with the steps below. Dashboard evidence is available in [the summary screenshot](task5-workforce-dashboard.png) and [the department breakdown screenshot](task5-workforce-breakdowns.png).
+Deploy `app.py` from this repository with Streamlit Community Cloud. The
+release snapshot is `data/pulseiq_public.duckdb`; it contains governed
+aggregates only and is refreshed by `.github/workflows/monthly-report.yml`.
+See [Task 17 release evidence](phase-4/task-17/README.md) for the hosting
+decision, 200 MB budget, refresh schedule, and stranger-test checklist.
+Dashboard evidence is available in [the summary screenshot](task5-workforce-dashboard.png)
+and [the department breakdown screenshot](task5-workforce-breakdowns.png).
 
 ## Features
 
@@ -133,10 +139,14 @@ The dashboard queries metric views only. M01-M03 provide headcount, hires, and e
 
 ## Limitations and what I would do next
 
-- The app uses the supplied CSV dataset and local DuckDB file; it is not deployed with authentication, role-based access, or scheduled refresh.
+- The public release publishes governed aggregate metrics without
+  authentication or role-based access. Streamlit Community Cloud may sleep
+  between visits; a paid always-on plan would be appropriate if a cold start
+  hurt real users.
 - Groups below five are suppressed. Totals from category breakdowns may be lower than department-level headcount because suppression is applied at each view's grain.
 - M29 excludes transfers and sums reportable department/month values, so suppressed groups are not represented in its dashboard total.
-- Next: connect a scheduled refresh, add deployment and access controls, and automate browser-level tests across desktop and mobile layouts.
+- Next: add access controls and automate browser-level tests across desktop and
+  mobile layouts.
 
 Further evidence and definitions: [Task 2 warehouse](docs/task2-evidence.md), [Task 4 metric layer](docs/task4-metric-layer.md), [Task 5 dashboard](docs/task5-evidence.md), [Task 11 P&L](docs/task11-evidence.md), [Task 12 receivables and cash](docs/task12-evidence.md), [Task 13 department impact](docs/task13-evidence.md), [Task 14 AI signals](docs/task14-evidence.md), and [Task 16 release evidence](phase4/task-16/task16-evidence.md).
 

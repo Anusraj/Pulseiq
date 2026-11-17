@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import duckdb
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATABASE = ROOT / "pulseiq.duckdb"
+from release_config import DATABASE
 TEAL = "#087E8B"
 INK = "#172B4D"
 

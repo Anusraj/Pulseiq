@@ -3,4 +3,5 @@ __pycache__/
 *.py[cod]
 *.duckdb
 *.duckdb.wal
+!data/pulseiq_public.duckdb
 .pytest_cache/
