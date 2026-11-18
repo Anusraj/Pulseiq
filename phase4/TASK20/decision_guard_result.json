@@ -1,0 +1,13 @@
+{
+  "decision": "HOLD_COST_ACTION",
+  "reason": "A critical live-data quality failure remains. Resolve DQ-C01 before using payroll or cost metrics for intervention decisions.",
+  "critical_failures": [
+    {
+      "check_id": "DQ-C01",
+      "check_name": "Payroll equals ledger",
+      "bad_rows": 1,
+      "sample_findings": "[[\"2026-06\", \"payroll=54664233.34999998; ledger=54682683.349999994; difference=-18450.0000000149\"]]"
+    }
+  ],
+  "source": "release_checks.json"
+}
