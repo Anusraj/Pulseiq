@@ -73,5 +73,5 @@ renames.
 ## Validation command
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s phase-4\Task19 -p "test_*.py" -v
+.\.venv\Scripts\python.exe -m unittest discover -s phase4\task-19 -p "test_*.py" -v
 ```

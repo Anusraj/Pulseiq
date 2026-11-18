@@ -52,5 +52,5 @@ See [evidence.md](evidence.md) for the tested role matrix and privacy
 outcomes. Run the focused tests with:
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s phase-4\Task18 -p "test_*.py" -v
+.\.venv\Scripts\python.exe -m unittest discover -s phase4\task-18 -p "test_*.py" -v
 ```

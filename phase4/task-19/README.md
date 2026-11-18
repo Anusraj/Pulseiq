@@ -9,8 +9,8 @@ profit, and M20 days sales outstanding.
 From the repository root:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r phase-4\Task19\requirements.txt
-.\.venv\Scripts\python.exe -m uvicorn metrics_api:app --app-dir phase-4\Task19 --reload
+.\.venv\Scripts\python.exe -m pip install -r phase4\task-19\requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn metrics_api:app --app-dir phase4\task-19 --reload
 ```
 
 The API is then available at `http://127.0.0.1:8000`. Interactive OpenAPI
@@ -79,8 +79,8 @@ second service from the same GitHub repository (for example, a Render web
 service) with:
 
 - Root directory: repository root
-- Build command: `python -m pip install -r phase-4\Task19\requirements.txt`
-- Start command: `uvicorn metrics_api:app --app-dir phase-4\Task19 --host 0.0.0.0 --port $PORT`
+- Build command: `python -m pip install -r phase4\task-19\requirements.txt`
+- Start command: `uvicorn metrics_api:app --app-dir phase4\task-19 --host 0.0.0.0 --port $PORT`
 - Health check path: `/health`
 
 The service must include the repository's `pulseiq.duckdb` (or set
