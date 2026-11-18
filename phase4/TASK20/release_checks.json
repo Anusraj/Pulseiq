@@ -1,0 +1,70 @@
+{
+  "status": "CONDITIONAL_PASS",
+  "database": "C:\\Users\\ELCOT\\Desktop\\Pulseiq\\pulseiq.duckdb",
+  "latest_headcount_period": "2026-09-01",
+  "reconciliation": {
+    "status": "PASS",
+    "tables_checked": 14,
+    "warehouse_non_pass_rows": 0
+  },
+  "metric_layer": {
+    "status": "PASS",
+    "catalog_metrics": 29,
+    "metric_views_in_schema": 60,
+    "validated_views": 29
+  },
+  "data_quality": {
+    "status": "CONDITIONAL",
+    "critical_failures": [
+      {
+        "check_id": "DQ-C01",
+        "check_name": "Payroll equals ledger",
+        "bad_rows": 1,
+        "sample_findings": "[[\"2026-06\", \"payroll=54664233.34999998; ledger=54682683.349999994; difference=-18450.0000000149\"]]"
+      }
+    ],
+    "warning_checks": [
+      {
+        "check_id": "DQ-C05",
+        "check_name": "No attendance after exit",
+        "bad_rows": 4
+      },
+      {
+        "check_id": "DQ-C06",
+        "check_name": "Unpaid leave deducted",
+        "bad_rows": 1
+      },
+      {
+        "check_id": "DQ-C07",
+        "check_name": "Invoice arithmetic",
+        "bad_rows": 1
+      },
+      {
+        "check_id": "DQ-C08",
+        "check_name": "Expense arithmetic",
+        "bad_rows": 1
+      },
+      {
+        "check_id": "DQ-C09",
+        "check_name": "Task dates sensible",
+        "bad_rows": 20
+      },
+      {
+        "check_id": "DQ-C10",
+        "check_name": "Leave dates sensible",
+        "bad_rows": 2
+      },
+      {
+        "check_id": "DQ-C11",
+        "check_name": "AI feeds are fresh",
+        "bad_rows": 410
+      },
+      {
+        "check_id": "DQ-C14",
+        "check_name": "Minimum group size",
+        "bad_rows": 306
+      }
+    ]
+  },
+  "decision_note": "Do not approve payroll or cost decisions until DQ-C01 reconciles June 2026."
+}

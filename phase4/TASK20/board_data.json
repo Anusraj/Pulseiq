@@ -1,0 +1,274 @@
+{
+  "headcount": [
+    [
+      "2025-10-01",
+      392.0
+    ],
+    [
+      "2025-11-01",
+      393.0
+    ],
+    [
+      "2025-12-01",
+      397.0
+    ],
+    [
+      "2026-01-01",
+      404.0
+    ],
+    [
+      "2026-02-01",
+      408.0
+    ],
+    [
+      "2026-03-01",
+      407.0
+    ],
+    [
+      "2026-04-01",
+      406.0
+    ],
+    [
+      "2026-05-01",
+      408.0
+    ],
+    [
+      "2026-06-01",
+      416.0
+    ],
+    [
+      "2026-07-01",
+      420.0
+    ],
+    [
+      "2026-08-01",
+      426.0
+    ],
+    [
+      "2026-09-01",
+      440.0
+    ]
+  ],
+  "attrition": [
+    [
+      "2026-04-01",
+      1.509433962264151
+    ],
+    [
+      "2026-05-01",
+      1.0050251256281406
+    ],
+    [
+      "2026-06-01",
+      0.9925558312655087
+    ],
+    [
+      "2026-07-01",
+      1.4687882496940023
+    ],
+    [
+      "2026-08-01",
+      0.4728132387706856
+    ],
+    [
+      "2026-09-01",
+      0.6928406466512702
+    ]
+  ],
+  "payroll": [
+    [
+      "2026-04-30",
+      61558743.650000006
+    ],
+    [
+      "2026-05-31",
+      47189530.74
+    ],
+    [
+      "2026-06-30",
+      54158995.349999994
+    ],
+    [
+      "2026-07-31",
+      48474799.26
+    ],
+    [
+      "2026-08-31",
+      48890682.24
+    ],
+    [
+      "2026-09-30",
+      55014383.870000005
+    ]
+  ],
+  "dso": [
+    [
+      "2026-09-30",
+      48.0
+    ]
+  ],
+  "overdue": [
+    [
+      "CL-015",
+      7110208.0
+    ],
+    [
+      "CL-014",
+      6097296.0
+    ],
+    [
+      "CL-004",
+      3884442.0
+    ],
+    [
+      "CL-019",
+      3632100.0
+    ],
+    [
+      "CL-007",
+      1706870.0
+    ]
+  ],
+  "teams": [
+    [
+      "T02/SP-38",
+      75.93
+    ],
+    [
+      "T12/SP-38",
+      79.09
+    ],
+    [
+      "T14/SP-38",
+      79.31
+    ],
+    [
+      "T16/SP-38",
+      83.33
+    ],
+    [
+      "T15/SP-38",
+      84.09
+    ],
+    [
+      "T06/SP-38",
+      85.71
+    ],
+    [
+      "T07/SP-38",
+      85.71
+    ],
+    [
+      "T11/SP-38",
+      86.67
+    ],
+    [
+      "T05/SP-38",
+      86.89
+    ],
+    [
+      "T13/SP-38",
+      87.8
+    ],
+    [
+      "T08/SP-38",
+      89.29
+    ],
+    [
+      "T03/SP-38",
+      90.38
+    ],
+    [
+      "T01/SP-38",
+      90.48
+    ],
+    [
+      "T04/SP-38",
+      90.77
+    ],
+    [
+      "T10/SP-38",
+      91.3
+    ],
+    [
+      "T09/SP-38",
+      92.86
+    ]
+  ],
+  "profit": [
+    [
+      "2026-09-01",
+      14985979.13
+    ]
+  ],
+  "checks": {
+    "status": "CONDITIONAL_PASS",
+    "database": "C:\\Users\\ELCOT\\Desktop\\Pulseiq\\pulseiq.duckdb",
+    "latest_headcount_period": "2026-09-01",
+    "reconciliation": {
+      "status": "PASS",
+      "tables_checked": 14,
+      "warehouse_non_pass_rows": 0
+    },
+    "metric_layer": {
+      "status": "PASS",
+      "catalog_metrics": 29,
+      "metric_views_in_schema": 60,
+      "validated_views": 29
+    },
+    "data_quality": {
+      "status": "CONDITIONAL",
+      "critical_failures": [
+        {
+          "check_id": "DQ-C01",
+          "check_name": "Payroll equals ledger",
+          "bad_rows": 1,
+          "sample_findings": "[[\"2026-06\", \"payroll=54664233.34999998; ledger=54682683.349999994; difference=-18450.0000000149\"]]"
+        }
+      ],
+      "warning_checks": [
+        {
+          "check_id": "DQ-C05",
+          "check_name": "No attendance after exit",
+          "bad_rows": 4
+        },
+        {
+          "check_id": "DQ-C06",
+          "check_name": "Unpaid leave deducted",
+          "bad_rows": 1
+        },
+        {
+          "check_id": "DQ-C07",
+          "check_name": "Invoice arithmetic",
+          "bad_rows": 1
+        },
+        {
+          "check_id": "DQ-C08",
+          "check_name": "Expense arithmetic",
+          "bad_rows": 1
+        },
+        {
+          "check_id": "DQ-C09",
+          "check_name": "Task dates sensible",
+          "bad_rows": 20
+        },
+        {
+          "check_id": "DQ-C10",
+          "check_name": "Leave dates sensible",
+          "bad_rows": 2
+        },
+        {
+          "check_id": "DQ-C11",
+          "check_name": "AI feeds are fresh",
+          "bad_rows": 410
+        },
+        {
+          "check_id": "DQ-C14",
+          "check_name": "Minimum group size",
+          "bad_rows": 306
+        }
+      ]
+    },
+    "decision_note": "Do not approve payroll or cost decisions until DQ-C01 reconciles June 2026."
+  }
+}
