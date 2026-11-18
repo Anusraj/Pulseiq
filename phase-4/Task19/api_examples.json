@@ -1,0 +1,121 @@
+{
+  "generated_from": "pulseiq.duckdb",
+  "generated_at": "2026-11-17",
+  "responses": {
+    "GET /api/v1/metrics/M01": {
+      "metric_id": "M01",
+      "metric_name": "Headcount",
+      "period_start": "2026-09-01",
+      "value": 167.0,
+      "unit": "count",
+      "definition": {
+        "business_definition": "Active employees on the last day of the month (permanent and contract).",
+        "formula": "COUNT(DISTINCT employee_id) with hire_date <= month_end AND (exit_date IS NULL OR exit_date > month_end)"
+      },
+      "source": {
+        "raw_table": "fact_headcount_monthly.csv",
+        "etl": "etl.py validates the feed; warehouse.py builds the monthly headcount fact.",
+        "warehouse_table": "warehouse.fact_headcount_monthly",
+        "metric_view": "metrics.m01_headcount",
+        "dashboard": "dashboard.py workforce KPI and headcount trend"
+      },
+      "last_refresh": {
+        "data_cutoff": "2026-09-30",
+        "refreshed_at": "2026-11-16T03:56:41.216614+00:00"
+      }
+    },
+    "GET /api/v1/metrics/M04": {
+      "metric_id": "M04",
+      "metric_name": "Attrition rate (monthly)",
+      "period_start": "2026-09-01",
+      "value": 1.22,
+      "unit": "percent",
+      "definition": {
+        "business_definition": "Share of people who left in the month.",
+        "formula": "Exits / ((headcount_start + headcount_end) / 2) x 100"
+      },
+      "source": {
+        "raw_table": "fact_headcount_monthly.csv",
+        "etl": "etl.py validates the feed; warehouse.py builds the monthly headcount fact.",
+        "warehouse_table": "warehouse.fact_headcount_monthly",
+        "metric_view": "metrics.m04_attrition_rate_monthly",
+        "dashboard": "dashboard.py workforce movement KPI"
+      },
+      "last_refresh": {
+        "data_cutoff": "2026-09-30",
+        "refreshed_at": "2026-11-16T03:56:41.216614+00:00"
+      }
+    },
+    "GET /api/v1/metrics/M09": {
+      "metric_id": "M09",
+      "metric_name": "Payroll cost (employer cost)",
+      "period_start": "2026-09-30",
+      "value": 21001404.24,
+      "unit": "INR",
+      "definition": {
+        "business_definition": "Full cost of employees to the company: gross pay plus employer PF and ESI.",
+        "formula": "SUM(employer_cost)"
+      },
+      "source": {
+        "raw_table": "fact_payroll.csv",
+        "etl": "etl.py validates and cleans payroll; warehouse.py builds the payroll fact.",
+        "warehouse_table": "warehouse.fact_payroll",
+        "metric_view": "metrics.m09_employer_payroll_cost",
+        "dashboard": "dashboard.py payroll-cost consumers and report pack"
+      },
+      "last_refresh": {
+        "data_cutoff": "2026-09-30",
+        "refreshed_at": "2026-11-16T03:56:41.216614+00:00"
+      }
+    },
+    "GET /api/v1/metrics/M17": {
+      "metric_id": "M17",
+      "metric_name": "Net profit",
+      "period_start": "2026-09-01",
+      "value": 14985979.13,
+      "unit": "INR",
+      "definition": {
+        "business_definition": "Revenue minus all expenses (4xxx less 5xxx).",
+        "formula": "-SUM(signed_amount) for accounts 4xxx and 5xxx"
+      },
+      "source": {
+        "raw_table": "fact_ledger.csv",
+        "etl": "etl.py validates ledger rows; warehouse.py builds the ledger fact.",
+        "warehouse_table": "warehouse.fact_ledger",
+        "metric_view": "metrics.m17_net_profit",
+        "dashboard": "pages/7_Profit_Loss.py net-profit KPI"
+      },
+      "last_refresh": {
+        "data_cutoff": "2026-09-30",
+        "refreshed_at": "2026-11-16T03:56:41.216614+00:00"
+      }
+    },
+    "GET /api/v1/metrics/M20": {
+      "metric_id": "M20",
+      "metric_name": "Days sales outstanding (DSO)",
+      "period_start": "2026-09-30",
+      "value": 48.0,
+      "unit": "days",
+      "definition": {
+        "business_definition": "Average days to collect: receivables divided by credit sales x days.",
+        "formula": "Closing receivables / revenue incl GST (last 90 days) x 90"
+      },
+      "source": {
+        "raw_table": "fact_invoice.csv and fact_ledger.csv",
+        "etl": "etl.py validates invoice and ledger feeds; warehouse.py builds both facts.",
+        "warehouse_table": "warehouse.fact_invoice + warehouse.fact_ledger",
+        "metric_view": "metrics.m20_days_sales_outstanding",
+        "dashboard": "pages/8_Receivables_Cash.py DSO KPI"
+      },
+      "last_refresh": {
+        "data_cutoff": "2026-09-30",
+        "refreshed_at": "2026-11-16T03:56:41.216614+00:00"
+      }
+    },
+    "GET /api/v1/freshness": {
+      "data_cutoff": "2026-09-30",
+      "refreshed_at": "2026-11-16T03:56:41.216614+00:00",
+      "statement": "Values are available through 2026-09-30; the database file was last refreshed at 2026-11-16T03:56:41.216614+00:00. Refresh the ETL and metric views before using a newer reporting period."
+    }
+  }
+}

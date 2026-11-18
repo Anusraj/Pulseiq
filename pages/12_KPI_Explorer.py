@@ -5,6 +5,6 @@ import runpy
 
 
 runpy.run_path(
-    str(Path(__file__).resolve().parents[1] / "phase4" / "task-18" / "kpi_explorer.py"),
+    str(Path(__file__).resolve().parents[1] / "phase-4" / "Task18" / "kpi_explorer.py"),
     run_name="__main__",
 )
