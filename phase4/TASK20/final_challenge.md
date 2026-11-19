@@ -21,4 +21,4 @@ formula or hiding the failure.
 - Output: `decision_guard_result.json`
 - Decision on current data: `HOLD_COST_ACTION`
 
-The branch is local only and was not pushed.
+

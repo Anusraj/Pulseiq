@@ -16,7 +16,6 @@ release notes, and a five-minute demo script.
 | `RELEASE_NOTES.md` | v1.0.0 scope, limits, and release decision |
 | `final_handover.md` | Executive handover and decision log |
 | `final_challenge.md` | Independent improvement and local branch notes |
-| `demo_script.md` | Five-minute demo runbook and tested live link |
 
 ## Rebuild
 
